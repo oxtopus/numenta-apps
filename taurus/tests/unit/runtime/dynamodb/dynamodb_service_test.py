@@ -138,7 +138,7 @@ class DynamoDBServiceTestCase(unittest.TestCase):
 
     amqpClientMock.declareExchange.assert_any_call(
       durable=True,
-      exchangeType="fanout",
+      exchangeType="topic",
       exchange=taurus.engine.config.get("metric_streamer", "results_exchange_name"))
 
     amqpClientMock.declareExchange.assert_any_call(
@@ -151,7 +151,7 @@ class DynamoDBServiceTestCase(unittest.TestCase):
     amqpClientMock.bindQueue.assert_any_call(
       queue=amqpClientMock.declareQueue.return_value.queue,
       exchange=taurus.engine.config.get("metric_streamer", "results_exchange_name"),
-      routingKey="")
+      routingKey="#")
 
     amqpClientMock.bindQueue.assert_any_call(
       exchange=taurus.engine.config.get("non_metric_data", "exchange_name"),

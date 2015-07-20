@@ -23,7 +23,7 @@
 """ DynamoDB Service
 
 Subscribes to a dynamodb queue bound to model results and non-metric data
-fanout exchanges and forwards data to dynamodb for consumption by mobile
+topic exchanges and forwards data to dynamodb for consumption by mobile
 client.
 """
 
@@ -144,7 +144,7 @@ def convertInferenceResultRowToMetricDataItem(metricId, row):
 
 class DynamoDBService(object):
   """ Binds a "dynamodb" queue to:
-      - The model results fanout exchange defined in the
+      - The model results topic exchange defined in the
         ``results_exchange_name`` configuration directive of the
         ``metric_streamer`` configuration section.
       - Non-metric data topic exchange defined in the ``exchange_name``
@@ -577,7 +577,7 @@ class DynamoDBService(object):
     """ Declares model results and non-metric data exchanges
     """
     amqpClient.declareExchange(exchange=self._modelResultsExchange,
-                               exchangeType="fanout",
+                               exchangeType="topic",
                                durable=True)
     amqpClient.declareExchange(exchange=self._nonMetricDataExchange,
                                exchangeType="topic",
@@ -591,7 +591,7 @@ class DynamoDBService(object):
     result = amqpClient.declareQueue(self._queueName, durable=True)
 
     amqpClient.bindQueue(exchange=self._modelResultsExchange,
-                         queue=result.queue, routingKey="")
+                         queue=result.queue, routingKey="#")
 
     # Note: We're using a topic exchange with a permissive wildcard routing
     # key.  This routes all messages from the non-metric data exchange into

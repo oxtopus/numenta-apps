@@ -23,7 +23,6 @@
 import itertools
 import json
 import logging
-from collections import namedtuple
 import math
 from optparse import OptionParser
 import os
@@ -83,6 +82,17 @@ def _getLogger():
 
 
 g_log = _getLogger()
+
+
+
+def _migrateResultsExchangeFromFanoutToTopic(modelResultsExchange):
+  # Results exchange was previously a fanout exchange, delete it so that it may
+  # be re-declared later as a topic exchange
+  with amqp.synchronous_amqp_client.SynchronousAmqpClient(
+      amqp.connection.getRabbitmqConnectionParameters()) as amqpClient:
+    g_log.info("Deleting {} exchange.".format(modelResultsExchange))
+    amqpClient.deleteExchange(modelResultsExchange, ifUnused=False)
+    g_log.info("{} exchange deleted.".format(modelResultsExchange))
 
 
 
@@ -169,7 +179,7 @@ class AnomalyService(object):
   configuration directive from the ``metric_streamer`` section of
   ``config``.
 
-  Other services may be subscribed to the model results fanout exchange for
+  Other services may be subscribed to the model results topic exchange for
   subsequent (and parallel) processing.  For example,
   ``htmengine.runtime.notification_service.NotificationService`` is one example
   of a use-case for that exchange.  Consumers must deserialize inbound messages
@@ -191,6 +201,12 @@ class AnomalyService(object):
       config.getint("anomaly_likelihood", "statistics_sample_size"))
 
     self.likelihoodHelper = AnomalyLikelihoodHelper(self._log, config)
+
+
+  def _migrate(self):
+    """ Migrations go here.
+    """
+    _migrateResultsExchangeFromFanoutToTopic(self._modelResultsExchange)
 
 
   def _processModelCommandResult(self, metricID, result):
@@ -648,7 +664,7 @@ class AnomalyService(object):
     with amqp.synchronous_amqp_client.SynchronousAmqpClient(
         amqp.connection.getRabbitmqConnectionParameters()) as amqpClient:
       amqpClient.declareExchange(self._modelResultsExchange,
-                                 exchangeType="fanout",
+                                 exchangeType="topic",
                                  durable=True)
 
     with ModelSwapperInterface() as modelSwapper, MessageBusConnector() as bus:
@@ -673,7 +689,7 @@ class AnomalyService(object):
                 else:
                   bus.publishExg(
                     exchange=self._modelResultsExchange,
-                    routingKey="",
+                    routingKey="modelID.{}".format(batch.modelID),
                     body=self._serializeModelResult(cmdResultMessage),
                     properties=modelCommandResultProperties)
               elif isinstance(result, ModelInferenceResult):
@@ -742,15 +758,30 @@ def main(args):
 
   parser = OptionParser(helpString)
 
-  (_options, args) = parser.parse_args(args)
+  parser.add_option("--migrate",
+                    dest="migrate",
+                    action="store_true",
+                    default=False,
+                    help="Apply amqp migrations, if there are any.")
+
+  (options, args) = parser.parse_args(args)
 
   if len(args) > 0:
     parser.error("Didn't expect any positional args (%r)." % (args,))
 
+  logger = _getLogger()
+
+  if options.migrate:
+      # Run migrations if there are any
+      logger.info("Running migrations.")
+      AnomalyService()._migrate()
+      logger.info("Migrations complete.  Exiting.")
+      return
+
   try:
     AnomalyService().run()
   except Exception:
-    _getLogger().exception("Error in Anomaly Service run()")
+    logger.exception("Error in Anomaly Service run()")
     raise
 
 

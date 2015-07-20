@@ -126,7 +126,7 @@ class ResultQualityTests(test_case_base.TestCaseBase):
       amqpClient.bindQueue(
         queue=self.resultsQueueName,
         exchange=config.get("metric_streamer", "results_exchange_name"),
-        routingKey="")
+        routingKey="#")
 
 
   def testIIOData(self):
@@ -291,11 +291,7 @@ class ResultQualityTests(test_case_base.TestCaseBase):
 
   def _reapAnomalyServiceResults(self, metricId, numRowsExpected):
     """ Retrieve likelihood results from our AMQP message queue that is bound to
-    Anomaly Service's results fanout exchange
-
-    NOTE that Anomaly Service fans out all results for all models via "fanout"
-    exchange, so our queue might contain results from additional models, which
-    we filter out.
+    Anomaly Service's results topic exchange
 
     :param metricId: unique id of our metric/model
     :param numRowsExpected: number of result rows expected by caller

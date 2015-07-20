@@ -153,7 +153,7 @@ class NotificationService(object):
   """ Notification Service to monitor model inference results and trigger
       notifications where appropriate.
 
-      Binds a "notifications" queue to the model results fanout exchange
+      Binds a "notifications" queue to the model results topic exchange
       defined in the ``results_exchange_name`` configuration directive of the
       ``metric_streamer`` configuration section.
   """
@@ -382,13 +382,13 @@ class NotificationService(object):
         # make sure the queue and exchanges exists and the queue is bound
         amqpClient.declareExchange(self._modelResultsExchange,
                                    durable=True,
-                                   exchangeType="fanout")
+                                   exchangeType="topic")
 
         result = amqpClient.declareQueue("notifications", durable=True)
 
         amqpClient.bindQueue(queue=result.queue,
                              exchange=self._modelResultsExchange,
-                             routingKey="")
+                             routingKey="#")
 
         # Start consuming messages
         consumer = amqpClient.createConsumer(result.queue)
