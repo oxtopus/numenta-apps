@@ -7,6 +7,6 @@ sqlalchemy==0.9.4
 # required by tests
 mock==1.0.1
 unittest2==0.5.1
-pytest==2.4.2
+pytest==2.5.1
 pytest-cov==1.6
 pytest-xdist==1.8
