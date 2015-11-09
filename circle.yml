@@ -8,9 +8,11 @@ dependencies:
     - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 20
     - curl -O https://capnproto.org/capnproto-c++-0.5.3.tar.gz
     - tar zxf capnproto-c++-0.5.3.tar.gz
+    - pwd
+    - ls -laFh
     - (cd capnproto-c++-0.5.3 && ./configure && make check && sudo make install)
-    - (cd numenta-apps/nta.utils && python setup.py install)
-    - (cd numenta-apps/htmengine && python setup.py install)
-    - (cd numenta-apps/infrastructure && python setup.py install)
-    - (cd numenta-apps/taurus.metric_collectors && python setup.py install)
-    - (cd numenta-apps/taurus && python setup.py install)
+    - (cd nta.utils && python setup.py install)
+    - (cd htmengine && python setup.py install)
+    - (cd infrastructure && python setup.py install)
+    - (cd taurus.metric_collectors && python setup.py install)
+    - (cd taurus && python setup.py install)
