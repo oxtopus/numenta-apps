@@ -5,6 +5,8 @@ general:
 machine:
   environment:
     PYTHONPATH: /home/ubuntu/local/lib/python2.7/site-packages
+    CC: clang
+    CXX: clang++
 dependencies:
   pre:
     - sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
