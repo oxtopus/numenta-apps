@@ -4,7 +4,7 @@ general:
       - DEVOPS-53-circleci
 machine:
   environment:
-    PYTHONPATH: ~/local/lib/python2.7/site-packages
+    PYTHONPATH: /home/ubuntu/local/lib/python2.7/site-packages
 dependencies:
   cache_directories:
     - capnproto-c++-0.5.3
@@ -15,8 +15,8 @@ dependencies:
     - tar zxf capnproto-c++-0.5.3.tar.gz
     - (cd capnproto-c++-0.5.3 && ./configure && make check && sudo make install)
     - mkdir -p ~/local/lib/python2.7/site-packages
-    - (cd nta.utils && python setup.py install --prefix=~/local)
-    - (cd htmengine && python setup.py install --prefix=~/local)
-    - (cd infrastructure && python setup.py install --prefix=~/local)
-    - (cd taurus.metric_collectors && python setup.py install --prefix=~/local)
-    - (cd taurus && python setup.py install --prefix=~/local)
+    - (cd nta.utils && python setup.py install --prefix=/home/ubuntu/local)
+    - (cd htmengine && python setup.py install --prefix=/home/ubuntu/local)
+    - (cd infrastructure && python setup.py install --prefix=/home/ubuntu/local)
+    - (cd taurus.metric_collectors && python setup.py install --prefix=/home/ubuntu/local)
+    - (cd taurus && python setup.py install --prefix=/home/ubuntu/local)
