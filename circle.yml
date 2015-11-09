@@ -9,6 +9,7 @@ dependencies:
   pre:
     - sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
     - sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100
+    - sudo apt-get install clang-3.3
     - curl -O https://capnproto.org/capnproto-c++-0.5.3.tar.gz
     - tar zxf capnproto-c++-0.5.3.tar.gz
     - (cd capnproto-c++-0.5.3 && ./configure && make check && sudo make install)
