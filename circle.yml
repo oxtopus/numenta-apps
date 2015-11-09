@@ -2,6 +2,9 @@ general:
   branches:
     only:
       - DEVOPS-53-circleci
+machine:
+  environment:
+    PYTHONPATH: ~/local/lib/python2.7/site-packages
 dependencies:
   cache_directories:
     - capnproto-c++-0.5.3
