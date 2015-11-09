@@ -1,0 +1,4 @@
+general:
+  build_dir: taurus
+  branches:
+    only: DEVOPS-53-circleci
