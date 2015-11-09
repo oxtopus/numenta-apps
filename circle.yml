@@ -3,16 +3,17 @@ general:
     only:
       - DEVOPS-53-circleci
 dependencies:
+  cache_directories:
+    - capnproto-c++-0.5.3
   pre:
     - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 20
     - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 20
     - curl -O https://capnproto.org/capnproto-c++-0.5.3.tar.gz
     - tar zxf capnproto-c++-0.5.3.tar.gz
-    - pwd
-    - ls -laFh
     - (cd capnproto-c++-0.5.3 && ./configure && make check && sudo make install)
-    - (cd nta.utils && python setup.py install)
-    - (cd htmengine && python setup.py install)
-    - (cd infrastructure && python setup.py install)
-    - (cd taurus.metric_collectors && python setup.py install)
-    - (cd taurus && python setup.py install)
+    - mkdir -p ~/local/lib/python2.7/site-packages
+    - (cd nta.utils && python setup.py install --prefix=~/local)
+    - (cd htmengine && python setup.py install --prefix=~/local)
+    - (cd infrastructure && python setup.py install --prefix=~/local)
+    - (cd taurus.metric_collectors && python setup.py install --prefix=~/local)
+    - (cd taurus && python setup.py install --prefix=~/local)
