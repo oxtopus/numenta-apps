@@ -8,6 +8,8 @@ machine:
     CC: clang
     CXX: clang++
 dependencies:
+  cache_directories:
+    - capnproto-c++-0.5.3
   pre:
     - sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
     - sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100
