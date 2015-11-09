@@ -22,4 +22,5 @@ dependencies:
     - (cd htmengine && python setup.py install --prefix=/home/ubuntu/local)
     - (cd infrastructure && python setup.py install --prefix=/home/ubuntu/local)
     - (cd taurus.metric_collectors && python setup.py install --prefix=/home/ubuntu/local)
+    - pip install `cat taurus/requirements.txt | grep uwsgi` --user
     - (cd taurus && python setup.py install --prefix=/home/ubuntu/local)
