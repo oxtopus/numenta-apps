@@ -37,6 +37,7 @@ dependencies:
     - taurus-set-sql-login --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=
     - taurus-create-db --host=${MYSQL_HOST} --user=${MYSQL_USER} --password= --suppress-prompt-and-continue-with-deletion
     - (cd /home/ubuntu/numenta-apps/taurus/taurus/engine/repository && python migrate.py)
+    - (cd /home/ubuntu/numenta-apps/taurus/pipeline/circleci && ./generate-ssl-cert.sh)
 test:
   override:
     - py.test nta.utils/tests/unit
