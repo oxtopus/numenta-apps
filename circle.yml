@@ -25,12 +25,12 @@ dependencies:
     - tar zxf capnproto-c++-0.5.3.tar.gz
     - (cd capnproto-c++-0.5.3 && ./configure && make check && sudo make install)
     - mkdir -p ~/local/lib/python2.7/site-packages
-    - (cd nta.utils && python setup.py install --prefix=/home/ubuntu/local)
-    - (cd htmengine && python setup.py install --prefix=/home/ubuntu/local)
-    - (cd infrastructure && python setup.py install --prefix=/home/ubuntu/local)
-    - (cd taurus.metric_collectors && python setup.py install --prefix=/home/ubuntu/local)
+    - (cd nta.utils && python setup.py develop --prefix=/home/ubuntu/local)
+    - (cd htmengine && python setup.py develop --prefix=/home/ubuntu/local)
+    - (cd infrastructure && python setup.py develop --prefix=/home/ubuntu/local)
+    - (cd taurus.metric_collectors && python setup.py develop --prefix=/home/ubuntu/local)
     - pip install `cat taurus/requirements.txt | grep uwsgi` --user
-    - (cd taurus && python setup.py install --prefix=/home/ubuntu/local)
+    - (cd taurus && python setup.py develop --prefix=/home/ubuntu/local)
   post:
     - taurus-set-rabbitmq --host=${RABBITMQ_HOST} --user=${RABBITMQ_USER} --password=${RABBITMQ_PASSWD}
     - taurus-set-sql-login --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=
