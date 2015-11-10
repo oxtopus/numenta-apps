@@ -4,9 +4,11 @@ general:
       - DEVOPS-53-circleci
 machine:
   environment:
+    PATH: $PATH:/home/ubuntu/local/bin
     PYTHONPATH: /home/ubuntu/local/lib/python2.7/site-packages
     CC: clang
     CXX: clang++
+    APPLICATION_CONFIG_PATH: /home/ubuntu/numenta-apps/taurus/conf
 dependencies:
   cache_directories:
     - capnproto-c++-0.5.3
