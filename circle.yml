@@ -9,6 +9,11 @@ machine:
     CC: clang
     CXX: clang++
     APPLICATION_CONFIG_PATH: /home/ubuntu/numenta-apps/taurus/conf
+    RABBITMQ_HOST: localhost
+    RABBITMQ_USER: guest
+    RABBITMQ_PASSWD: guest
+    MYSQL_HOST: localhost
+    MYSQL_USER: ubuntu
 dependencies:
   cache_directories:
     - capnproto-c++-0.5.3
@@ -27,4 +32,6 @@ dependencies:
     - pip install `cat taurus/requirements.txt | grep uwsgi` --user
     - (cd taurus && python setup.py install --prefix=/home/ubuntu/local)
   post:
-    - taurus-set-rabbitmq --host=localhost --user= --password=
+    - taurus-set-rabbitmq --host=${RABBITMQ_HOST} --user=${RABBITMQ_USER} --password=${RABBITMQ_PASSWD}
+    - taurus-set-sql-login --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=
+    - taurus-create-db --host=${MYSQL_HOST} --user=${MYSQL_USER} --password= --suppress-prompt-and-continue-with-deletion
