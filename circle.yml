@@ -24,3 +24,5 @@ dependencies:
     - (cd taurus.metric_collectors && python setup.py install --prefix=/home/ubuntu/local)
     - pip install `cat taurus/requirements.txt | grep uwsgi` --user
     - (cd taurus && python setup.py install --prefix=/home/ubuntu/local)
+  post:
+    - taurus-set-rabbitmq --host=localhost --user= --password=
