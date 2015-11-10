@@ -31,6 +31,7 @@ dependencies:
     - (cd taurus.metric_collectors && python setup.py develop --prefix=/home/ubuntu/local)
     - pip install `cat taurus/requirements.txt | grep uwsgi` --user
     - (cd taurus && python setup.py develop --prefix=/home/ubuntu/local)
+    - sudo apt-get install nginx
   post:
     - mkdir -p logs
     - taurus-set-rabbitmq --host=${RABBITMQ_HOST} --user=${RABBITMQ_USER} --password=${RABBITMQ_PASSWD}
