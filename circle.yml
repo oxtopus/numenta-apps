@@ -44,7 +44,7 @@ dependencies:
     - cp -r taurus/pipeline/circleci/ssl taurus/conf/
 test:
   pre:
-    - service nginx stop
+    - sudo service nginx stop
     - sudo nginx -p taurus -c conf/nginx-taurus.conf
   override:
     - py.test nta.utils/tests/unit
