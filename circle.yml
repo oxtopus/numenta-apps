@@ -53,6 +53,7 @@ test:
     - sudo service nginx stop
     - sudo nginx -p taurus -c conf/nginx-taurus.conf
     - (cd taurus && supervisord -c conf/supervisord.conf)
+    - sudo rabbitmq-plugins enable rabbitmq_management
   override:
     - py.test nta.utils/tests/unit
     - py.test htmengine/tests/unit
