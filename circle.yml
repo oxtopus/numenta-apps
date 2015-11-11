@@ -21,10 +21,11 @@ dependencies:
     - sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
     - sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100
     - sudo apt-get update
-    - sudo apt-get install clang-3.3
+    - sudo apt-get install clang-3.3 nginx
     - curl -O https://capnproto.org/capnproto-c++-0.5.3.tar.gz
     - tar zxf capnproto-c++-0.5.3.tar.gz
     - (cd capnproto-c++-0.5.3 && ./configure && make check && sudo make install)
+  override:
     - mkdir -p ~/local/lib/python2.7/site-packages
     - (cd nta.utils && python setup.py develop --prefix=/home/ubuntu/local)
     - (cd htmengine && python setup.py develop --prefix=/home/ubuntu/local)
@@ -32,16 +33,19 @@ dependencies:
     - (cd taurus.metric_collectors && python setup.py develop --prefix=/home/ubuntu/local)
     - pip install `cat taurus/requirements.txt | grep uwsgi` --user
     - (cd taurus && python setup.py develop --prefix=/home/ubuntu/local)
-    - sudo apt-get install nginx
   post:
     - mkdir -p logs
-    - taurus-set-rabbitmq --host=${RABBITMQ_HOST} --user=${RABBITMQ_USER} --password=${RABBITMQ_PASSWD}
-    - taurus-set-sql-login --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=
-    - taurus-create-db --host=${MYSQL_HOST} --user=${MYSQL_USER} --password= --suppress-prompt-and-continue-with-deletion
-    - (cd /home/ubuntu/numenta-apps/taurus/taurus/engine/repository && python migrate.py)
     - (cd /home/ubuntu/numenta-apps/taurus/pipeline/circleci && ./generate-ssl-cert.sh)
     - cp -r taurus/pipeline/circleci/overrides/taurus/conf/* taurus/conf/
     - cp -r taurus/pipeline/circleci/ssl taurus/conf/
+database:
+  pre:
+    - taurus-set-sql-login --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=
+    - taurus-set-rabbitmq --host=${RABBITMQ_HOST} --user=${RABBITMQ_USER} --password=${RABBITMQ_PASSWD}
+  override:
+    - taurus-create-db --host=${MYSQL_HOST} --user=${MYSQL_USER} --password= --suppress-prompt-and-continue-with-deletion
+  post:
+    - (cd /home/ubuntu/numenta-apps/taurus/taurus/engine/repository && python migrate.py)
 test:
   pre:
     - sudo service nginx stop
