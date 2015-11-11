@@ -38,10 +38,12 @@ dependencies:
     - (cd /home/ubuntu/numenta-apps/taurus/pipeline/circleci && ./generate-ssl-cert.sh)
     - cp -r taurus/pipeline/circleci/overrides/taurus/conf/* taurus/conf/
     - cp -r taurus/pipeline/circleci/ssl taurus/conf/
+    - taurus-set-api-key --apikey=circleci
 database:
   pre:
     - taurus-set-sql-login --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=
     - taurus-set-rabbitmq --host=${RABBITMQ_HOST} --user=${RABBITMQ_USER} --password=${RABBITMQ_PASSWD}
+    - taurus-set-dynamodb --host= --port= --table-suffix=${CIRCLE_PROJECT_USERNAME}-${CIRCLE_PROJECT_REPONAME}-${CIRCLE_BRANCH}
   override:
     - taurus-create-db --host=${MYSQL_HOST} --user=${MYSQL_USER} --password= --suppress-prompt-and-continue-with-deletion
   post:
@@ -50,7 +52,11 @@ test:
   pre:
     - sudo service nginx stop
     - sudo nginx -p taurus -c conf/nginx-taurus.conf
+    - supervisord -c conf/supervisord.conf
   override:
     - py.test nta.utils/tests/unit
     - py.test htmengine/tests/unit
     - py.test taurus/tests/unit
+    - py.test nta.utils/tests/integration
+    - py.test htmengine/tests/integration
+    - py.test taurus/tests/integration
