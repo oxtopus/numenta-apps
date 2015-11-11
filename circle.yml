@@ -52,7 +52,7 @@ test:
   pre:
     - sudo service nginx stop
     - sudo nginx -p taurus -c conf/nginx-taurus.conf
-    - supervisord -c conf/supervisord.conf
+    - (cd taurus && supervisord -c conf/supervisord.conf)
   override:
     - py.test nta.utils/tests/unit
     - py.test htmengine/tests/unit
