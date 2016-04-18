@@ -53,7 +53,7 @@
   "snackbar": {
     "completed": {
       "message": "HTM Model completed for %s",
-      "action" : "Results"
+      "action": "Results"
     }
   },
   "heading": {
