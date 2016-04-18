@@ -72,15 +72,12 @@ export default class ParamFinderClient {
     }
   }
 
-  _handleIPCError(error, ipcevent) {
-    let command, metricId;
+  _handleIPCError(metricId, error, ipcevent) {
+    let command;
 
     if (ipcevent) {
       if ('command' in ipcevent) {
         command = ipcevent.command;
-      }
-      if ('metricId' in ipcevent) {
-        metricId = ipcevent.metricId;
       }
     }
     this._context.executeAction(ParamFinderErrorAction, {

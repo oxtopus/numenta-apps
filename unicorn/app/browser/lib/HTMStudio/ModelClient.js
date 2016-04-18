@@ -75,15 +75,12 @@ export default class ModelClient {
     }
   }
 
-  _handleIPCError(error, ipcevent) {
-    let command, modelId;
+  _handleIPCError(modelId, error, ipcevent) {
+    let command;
 
     if (ipcevent) {
       if ('command' in ipcevent) {
         command = ipcevent.command;
-      }
-      if ('modelId' in ipcevent) {
-        modelId = ipcevent.modelId;
       }
     }
 
