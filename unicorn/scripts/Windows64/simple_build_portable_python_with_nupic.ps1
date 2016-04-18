@@ -61,7 +61,7 @@ Copy-Item $script_path\package.json -destination $script_path/$portable_python_d
 # Tar/Gzip package using python
 # NOTE: Native "Write-Tar" truncates files and creates invalid tar files.
 $tar_czf = @"
-python -c 'import tarfile
+$portable_python_dir\python.exe -c 'import tarfile
 with tarfile.open(\"portable_python.tar.gz\", \"w:gz\") as tar:
   tar.add(\"$portable_python_dir\")
 '
