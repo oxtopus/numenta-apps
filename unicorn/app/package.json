@@ -2,7 +2,7 @@
   "name": "htmstudio",
   "productName": "HTM Studio",
   "version": "0.0.1",
-  "description": "Numenta HTM Studio Cross-platform HTM Example Desktop Application",
+  "description": "Numenta HTM Studio",
   "main": "main/loader.js",
   "private": true,
   "homepage": "http://numenta.com",
@@ -42,7 +42,8 @@
     "Application"
   ],
   "scripts": {
-    "postinstall": "npm run install:backend",
+    "postinstall": "npm run install:backend && npm run rebuild:leveldown",
+    "rebuild:leveldown": "cd node_modules/leveldown && node-gyp rebuild",
     "install:backend": "python ../py/setup.py install"
   },
   "dependencies": {
