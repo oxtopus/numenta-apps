@@ -18,7 +18,7 @@
   "scripts": {
     "postinstall": "install-app-deps",
     "build:osx": "npm run clean && npm install && npm run prepare && npm run dist:osx",
-    "build:win": "npm run clean && npm install && npm run prepare && run dist:win",
+    "build:win": "npm run clean && npm install && npm run prepare && npm run dist:win",
     "pack:osx": "build --platform darwin --arch x64",
     "pack:win": "build --platform win32 --arch x64",
     "dist:osx": "build --platform darwin --arch x64",
