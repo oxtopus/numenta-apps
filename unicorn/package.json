@@ -3,7 +3,11 @@
     "app-bundle-id": "com.numenta.apps.unicorn",
     "app-category-type": "public.app-category.developer-tools",
     "iconUrl": "https://raw.githubusercontent.com/numenta/numenta-apps/master/unicorn/build/icon.ico",
+    "publish": "never",
     "asar": false
+  },
+  "build.win": {
+    "noMsi": false
   },
   "repository": {
     "type": "git",
