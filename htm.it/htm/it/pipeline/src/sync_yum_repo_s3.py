@@ -144,7 +144,7 @@ def addAndParseArgs(jsonArgs):
                  "use --help for further details")
 
 
-def main(jsonArgs={}):
+def main(jsonArgs=None):
   """
     Main function for the pipeline. Executes all sub-tasks
 
@@ -155,6 +155,8 @@ def main(jsonArgs={}):
 
     :raises: raises generic Exception if anything else goes wrong.
   """
+  if jsonArgs is None:
+    jsonArgs = {}
   try:
     (repoName, syncRpm, pipelineParams,
      pipelineJson) = addAndParseArgs(jsonArgs)

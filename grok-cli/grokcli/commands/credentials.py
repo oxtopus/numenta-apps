@@ -78,8 +78,10 @@ parser.add_option(
 
 # Implementation
 
-def updateCredentialsFromFile(fp, credentials = {}):
+def updateCredentialsFromFile(fp, credentials = None):
   """ Read credentials from file """
+  if credentials is None:
+    credentials = {}
   for line in fp:
     if line:
       (key, _, value) = line.strip().partition("=")
@@ -89,8 +91,10 @@ def updateCredentialsFromFile(fp, credentials = {}):
         credentials["aws_secret_access_key"] = value.strip()
 
 
-def updateCredentialsFromBoto(credentials = {}):
+def updateCredentialsFromBoto(credentials = None):
   """ Read credentials from Boto configuration """
+  if credentials is None:
+    credentials = {}
   if boto.config.has_section("Credentials"):
     if boto.config.has_option("Credentials", "aws_access_key_id"):
       credentials["aws_access_key_id"] = boto.config.get("Credentials", "aws_access_key_id")

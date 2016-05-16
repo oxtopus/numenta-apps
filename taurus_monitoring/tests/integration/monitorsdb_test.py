@@ -161,7 +161,9 @@ class TestTransientErrorHandling(unittest.TestCase):
       self.assertEqual(res.scalar(), 1)
 
       @monitorsdb.retryOnTransientErrors
-      def _killProxyTryRestartProxyAndTryAgain(n=[]):
+      def _killProxyTryRestartProxyAndTryAgain(n=None):
+        if n is None:
+                n = []
         if not n:
           # Kill the proxy on first attempt
           proxy.send("kill")

@@ -154,7 +154,9 @@ class TestTransientErrorHandling(unittest.TestCase):
       self.assertEqual(res.scalar(), 1)
 
       @collectorsdb.retryOnTransientErrors
-      def _killProxyTryRestartProxyAndTryAgain(n=[]):  # pylint: disable=W0102
+      def _killProxyTryRestartProxyAndTryAgain(n=None):  # pylint: disable=W0102
+        if n is None:
+                n = []
         if not n:
           # Kill the proxy on first attempt
           proxy.send("kill")

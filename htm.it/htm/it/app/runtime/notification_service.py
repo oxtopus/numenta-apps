@@ -121,15 +121,7 @@ def humanFriendlyBytes(num, base=1000, units=("Bytes", "kB", "MB", "GB", "TB",
 
 def localizedTimestamp(timestamp,
                        region=None,
-                       zones={"ap-northeast-1": "Asia/Tokyo",
-                              "ap-southeast-1": "Asia/Singapore",
-                              "ap-southeast-2": "Australia/Sydney",
-                              "cn-north-1": "Asia/Shanghai",
-                              "eu-west-1": "GMT",
-                              "sa-east-1": "America/Sao_Paulo",
-                              "us-east-1": "US/Eastern",
-                              "us-west-1": "US/Pacific",
-                              "us-west-2": "US/Pacific"}):
+                       zones=None):
   """ Get localized timestamp.
 
       :param timestamp: Timestamp
@@ -142,6 +134,16 @@ def localizedTimestamp(timestamp,
       :returns: Timestamp with localized timezone
       :rtype: datetime instance
   """
+  if zones is None:
+    zones = {"ap-northeast-1": "Asia/Tokyo",
+                              "ap-southeast-1": "Asia/Singapore",
+                              "ap-southeast-2": "Australia/Sydney",
+                              "cn-north-1": "Asia/Shanghai",
+                              "eu-west-1": "GMT",
+                              "sa-east-1": "America/Sao_Paulo",
+                              "us-east-1": "US/Eastern",
+                              "us-west-1": "US/Pacific",
+                              "us-west-2": "US/Pacific"}
   if region is None:
     region = _getCurrentRegion()
 

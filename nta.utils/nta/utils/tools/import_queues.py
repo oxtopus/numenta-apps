@@ -60,12 +60,14 @@ parser.add_argument("--queue-regex", metavar="PATTERN", default=".*",
 
 
 
-def _getClient(host, user, passwd, _cache={}):
+def _getClient(host, user, passwd, _cache=None):
   """
   :param str host: RabbitMQ host
   :param str user: RabbitMQ user
   :param str passwd: RabbitMQ passwd
   """
+  if _cache is None:
+    _cache = {}
   if (host, user, passwd) not in _cache:
     connParams = ConnectionParams(host=host,
                                   credentials=PlainCredentials(user, passwd))
