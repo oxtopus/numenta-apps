@@ -503,7 +503,7 @@ class ResultQualityTests(test_case_base.TestCaseBase):
 
     # Make sure the metric was properly created and wait for the expected
     # records to be stored. NOTE: Waiting for all records to be stored
-    # facilitates constistent stats calculation in htmengine, resulting in
+    # facilitates consistent stats calculation in htmengine, resulting in
     # consistency of results from one run of the test to the next.
     uid = self.checkMetricCreated(metricName, numRecords=len(labels))
 

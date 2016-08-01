@@ -43,16 +43,15 @@ from htmengine.model_swapper.model_swapper_interface import (
   ModelInferenceResult,
   ModelInputRow,
   ModelSwapperInterface)
-from nta.utils.message_bus_connector import MessageBusConnector
-
 from htmengine.model_swapper.model_swapper_test_utils import (
   ModelSwapperIsolationPatch)
-
+from nta.utils.message_bus_connector import MessageBusConnector
 from nta.utils.logging_support_raw import LoggingSupport
 
 
 
 _LOGGER = logging.getLogger("model_swapper_e2e_test")
+
 
 
 def setUpModule():
@@ -126,10 +125,10 @@ class ModelSwapperE2ETestCase(unittest.TestCase):
 
       # Submit requests including a model creation command and two data rows.
       args["inputRecordSchema"] = (
-          FieldMetaInfo("c0", FieldMetaType.datetime,
-                        FieldMetaSpecial.timestamp),
-          FieldMetaInfo("c1", FieldMetaType.float,
-                        FieldMetaSpecial.none),
+        FieldMetaInfo("c0", FieldMetaType.datetime,
+                      FieldMetaSpecial.timestamp),
+        FieldMetaInfo("c1", FieldMetaType.float,
+                      FieldMetaSpecial.none),
       )
 
       # Define the model
@@ -144,10 +143,10 @@ class ModelSwapperE2ETestCase(unittest.TestCase):
 
       # Send input rows to the model
       inputRows = [
-          ModelInputRow(rowID="rowfoo",
-                        data=[datetime.datetime(2013, 5, 23, 8, 13, 00), 5.3]),
-          ModelInputRow(rowID="rowbar",
-                        data=[datetime.datetime(2013, 5, 23, 8, 13, 15), 2.4]),
+        ModelInputRow(rowID="rowfoo",
+                      data=[datetime.datetime(2013, 5, 23, 8, 13, 00), 5.3]),
+        ModelInputRow(rowID="rowbar",
+                      data=[datetime.datetime(2013, 5, 23, 8, 13, 15), 2.4]),
       ]
       _LOGGER.info("Submitting batch of %d input rows...", len(inputRows))
       swapperAPI.submitRequests(modelID=modelID, requests=inputRows)
@@ -229,6 +228,7 @@ class ModelSwapperE2ETestCase(unittest.TestCase):
       self.assertEqual(result.status, htmengineerrno.SUCCESS)
       self.assertEqual(result.rowID, inputRow.rowID)
       self.assertIsInstance(result.anomalyScore, float)
+      self.assertIsInstance(result.multiStepBestPredictions, dict)
 
     # The fourth batch should be for the "deleteModel"
     batch = resultBatches[3]
@@ -282,10 +282,10 @@ class ModelSwapperE2ETestCase(unittest.TestCase):
 
       # Submit requests including a model creation command and two data rows.
       args["inputRecordSchema"] = (
-          FieldMetaInfo("c0", FieldMetaType.datetime,
-                        FieldMetaSpecial.timestamp),
-          FieldMetaInfo("c1", FieldMetaType.float,
-                        FieldMetaSpecial.none),
+        FieldMetaInfo("c0", FieldMetaType.datetime,
+                      FieldMetaSpecial.timestamp),
+        FieldMetaInfo("c1", FieldMetaType.float,
+                      FieldMetaSpecial.none),
       )
 
       # Define the model
@@ -306,10 +306,10 @@ class ModelSwapperE2ETestCase(unittest.TestCase):
 
       # Send input rows to the clone
       inputRows = [
-          ModelInputRow(rowID="rowfoo",
-                        data=[datetime.datetime(2013, 5, 23, 8, 13, 00), 5.3]),
-          ModelInputRow(rowID="rowbar",
-                        data=[datetime.datetime(2013, 5, 23, 8, 13, 15), 2.4]),
+        ModelInputRow(rowID="rowfoo",
+                      data=[datetime.datetime(2013, 5, 23, 8, 13, 00), 5.3]),
+        ModelInputRow(rowID="rowbar",
+                      data=[datetime.datetime(2013, 5, 23, 8, 13, 15), 2.4]),
       ]
       _LOGGER.info("Submitting batch of %d input rows...", len(inputRows))
       swapperAPI.submitRequests(modelID=destModelID, requests=inputRows)
@@ -379,6 +379,7 @@ class ModelSwapperE2ETestCase(unittest.TestCase):
       self.assertEqual(result.status, htmengineerrno.SUCCESS)
       self.assertEqual(result.rowID, inputRow.rowID)
       self.assertIsInstance(result.anomalyScore, float)
+      self.assertIsInstance(result.multiStepBestPredictions, dict)
 
     # The fourth batch should be for the "deleteModel"
     batch = resultBatches[3]

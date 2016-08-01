@@ -247,7 +247,7 @@ def _parseArgs():
     rmqPort = int(rmqPort)
   except ValueError:
     msg = ("RabbitMQ Management Interface port must be an integer, but got %r"
-           % (metricDestPort,))
+           % (rmqPort,))
     g_log.exception(msg)
     parser.error(msg)
 

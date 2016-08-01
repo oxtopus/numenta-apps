@@ -90,6 +90,12 @@
             "description": "Anomaly score computed by anomaly-likelihood algorithm",
             "required": true,
             "type": "number"
+          },
+
+          "multiStepBestPredictions": {
+            "description": "Multi-step best predictions from model's associated classifier",
+            "required": true,
+            "type": "string"
           }
 
         }

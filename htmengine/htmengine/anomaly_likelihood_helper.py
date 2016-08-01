@@ -114,7 +114,7 @@ class AnomalyLikelihoodHelper(object):
     assert len(scores) >= self._statisticsMinSampleSize, (
       "_generateAnomalyParams: samples count=%d is smaller than min=%d; "
       "model=%s; lastRowID=%s") % (len(scores), self._statisticsMinSampleSize,
-                                  metricID, lastRowID,)
+                                   metricID, lastRowID,)
 
     assert len(scores) <= self._statisticsSampleSize, (
       "_generateAnomalyParams: samples count=%d is larger than max=%d; "
@@ -126,8 +126,7 @@ class AnomalyLikelihoodHelper(object):
     # CLA is still learning. For simplicity, this logic continues to ignore the
     # first day of data even once the window starts sliding.
     _, _, params = algorithms.estimateAnomalyLikelihoods(
-                      anomalyScores=scores,
-                      skipRecords=NUM_SKIP_RECORDS)
+      anomalyScores=scores, skipRecords=NUM_SKIP_RECORDS)
 
     anomalyParams = {}
     anomalyParams["last_rowid_for_stats"] = lastRowID
@@ -398,7 +397,7 @@ class AnomalyLikelihoodHelper(object):
         # We're here if:
         #   a. We haven't tried updating anomaly likelihood stats yet
         #                 OR
-        #   b. We already updated anomaly likelyhood stats (we had sufficient
+        #   b. We already updated anomaly likelihood stats (we had sufficient
         #      samples for it)
         # TODO: unit-test
         endRowID = (anomalyParams["last_rowid_for_stats"] +
@@ -410,7 +409,7 @@ class AnomalyLikelihoodHelper(object):
           #      update; this is the typical/normal case when backlog catch-up
           #      is tapering off, and refresh interval is reduced for smaller
           #      batches. OR
-          #   b. There is a gap of anomaly scores preceeding the start of the
+          #   b. There is a gap of anomaly scores preceding the start of the
           #      current chunk. OR
           #   c. Statistics config changed.
           # TODO: unit-test

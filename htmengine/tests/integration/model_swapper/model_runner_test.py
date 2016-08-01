@@ -25,7 +25,6 @@
 # Disable warning: Access to a protected member
 # pylint: disable=W0212
 
-
 import datetime
 import itertools
 import logging
@@ -34,7 +33,6 @@ import sys
 import threading
 import traceback
 
-
 import unittest
 
 from nupic.data.fieldmeta import FieldMetaInfo, FieldMetaSpecial, FieldMetaType
@@ -42,21 +40,17 @@ from nupic.frameworks.opf.common_models.cluster_params import (
   getScalarMetricWithTimeOfDayAnomalyParams)
 
 from htmengine import htmengineerrno
-
 from htmengine.model_checkpoint_mgr import model_checkpoint_mgr
-
 from htmengine.model_swapper import model_runner
-
 from htmengine.model_swapper.model_swapper_interface import (
-    ModelCommandResult, ModelInferenceResult, ModelInputRow,
-    ModelSwapperInterface)
-
-from nta.utils.message_bus_connector import MessageBusConnector
+  ModelCommandResult, ModelInferenceResult, ModelInputRow,
+  ModelSwapperInterface)
 
 from htmengine.model_swapper.model_swapper_test_utils import (
-    ModelSwapperIsolationPatch)
-from nta.utils.test_utils import ManagedSubprocessTerminator
+  ModelSwapperIsolationPatch)
 
+from nta.utils.message_bus_connector import MessageBusConnector
+from nta.utils.test_utils import ManagedSubprocessTerminator
 from nta.utils.logging_support_raw import LoggingSupport
 
 
@@ -153,10 +147,10 @@ class ModelRunnerIntTestCase(unittest.TestCase):
 
       # Submit requests including a model creation command and two data rows.
       args["inputRecordSchema"] = (
-          FieldMetaInfo("c0", FieldMetaType.datetime,
-                        FieldMetaSpecial.timestamp),
-          FieldMetaInfo("c1", FieldMetaType.float,
-                        FieldMetaSpecial.none),
+        FieldMetaInfo("c0", FieldMetaType.datetime,
+                      FieldMetaSpecial.timestamp),
+        FieldMetaInfo("c1", FieldMetaType.float,
+                      FieldMetaSpecial.none),
       )
 
       # Define the model
@@ -166,10 +160,10 @@ class ModelRunnerIntTestCase(unittest.TestCase):
 
       # Send input rows to the model
       inputRows = [
-          ModelInputRow(rowID="rowfoo",
-                        data=[datetime.datetime(2014, 5, 23, 8, 13, 00), 5.3]),
-          ModelInputRow(rowID="rowbar",
-                        data=[datetime.datetime(2014, 5, 23, 8, 13, 15), 2.4]),
+        ModelInputRow(rowID="rowfoo",
+                      data=[datetime.datetime(2014, 5, 23, 8, 13, 00), 5.3]),
+        ModelInputRow(rowID="rowbar",
+                      data=[datetime.datetime(2014, 5, 23, 8, 13, 15), 2.4]),
       ]
 
       _LOGGER.info("Submitting batch of %d input rows with ids=[%s..%s]...",
@@ -208,6 +202,7 @@ class ModelRunnerIntTestCase(unittest.TestCase):
         self.assertEqual(result.status, htmengineerrno.SUCCESS)
         self.assertEqual(result.rowID, inputRow.rowID)
         self.assertIsInstance(result.anomalyScore, float)
+        self.assertIsInstance(result.multiStepBestPredictions, dict)
 
       # Verify model checkpoint
       model = checkpointMgr.load(modelID)
@@ -225,10 +220,10 @@ class ModelRunnerIntTestCase(unittest.TestCase):
 
       # Now, check incremental checkpointing
       inputRows2 = [
-          ModelInputRow(rowID=2,
-                        data=[datetime.datetime(2014, 5, 23, 8, 13, 20), 2.7]),
-          ModelInputRow(rowID=3,
-                        data=[datetime.datetime(2014, 5, 23, 8, 13, 25), 3.9]),
+        ModelInputRow(rowID=2,
+                      data=[datetime.datetime(2014, 5, 23, 8, 13, 20), 2.7]),
+        ModelInputRow(rowID=3,
+                      data=[datetime.datetime(2014, 5, 23, 8, 13, 25), 3.9]),
       ]
 
       _LOGGER.info("Submitting batch of %d input rows with ids=[%s..%s]...",
@@ -252,6 +247,7 @@ class ModelRunnerIntTestCase(unittest.TestCase):
         self.assertEqual(result.status, htmengineerrno.SUCCESS)
         self.assertEqual(result.rowID, inputRow.rowID)
         self.assertIsInstance(result.anomalyScore, float)
+        self.assertIsInstance(result.multiStepBestPredictions, dict)
 
       model = checkpointMgr.load(modelID)
       del model
@@ -275,10 +271,10 @@ class ModelRunnerIntTestCase(unittest.TestCase):
 
       # Final run with incremental checkpointing
       inputRows3 = [
-          ModelInputRow(rowID=4,
-                        data=[datetime.datetime(2014, 5, 23, 8, 13, 30), 4.7]),
-          ModelInputRow(rowID=5,
-                        data=[datetime.datetime(2014, 5, 23, 8, 13, 35), 5.9]),
+        ModelInputRow(rowID=4,
+                      data=[datetime.datetime(2014, 5, 23, 8, 13, 30), 4.7]),
+        ModelInputRow(rowID=5,
+                      data=[datetime.datetime(2014, 5, 23, 8, 13, 35), 5.9]),
       ]
 
       _LOGGER.info("Submitting batch of %d input rows with ids=[%s..%s]...",
@@ -302,6 +298,7 @@ class ModelRunnerIntTestCase(unittest.TestCase):
         self.assertEqual(result.status, htmengineerrno.SUCCESS)
         self.assertEqual(result.rowID, inputRow.rowID)
         self.assertIsInstance(result.anomalyScore, float)
+        self.assertIsInstance(result.multiStepBestPredictions, dict)
 
       model = checkpointMgr.load(modelID)
       del model

@@ -28,7 +28,6 @@ import base64
 import cPickle
 import datetime
 import logging
-import os
 import select
 import threading
 import unittest
@@ -38,9 +37,6 @@ from mock import Mock, patch
 
 
 from nupic.data.fieldmeta import FieldMetaInfo
-
-from nta.utils.test_utils.config_test_utils import ConfigAttributePatch
-
 
 from htmengine.model_checkpoint_mgr import model_checkpoint_mgr
 from htmengine.model_swapper import model_runner
@@ -52,10 +48,8 @@ from htmengine.model_swapper.model_swapper_interface import (
   ModelInputRow,
   ModelInferenceResult)
 from htmengine import htmengineerrno
-
-
-
 from nta.utils.logging_support_raw import LoggingSupport
+from nta.utils.test_utils.config_test_utils import ConfigAttributePatch
 
 
 
@@ -166,9 +160,9 @@ class TestModelRunner(unittest.TestCase):
     checkpointMgrInstanceMock = modelCheckpointMgrClassMock.return_value
     checkpointMgrInstanceMock.loadCheckpointAttributes. \
       return_value = (
-      {
-        model_runner._ModelArchiver._BATCH_IDS_CHECKPOINT_ATTR_NAME:
-          ["1", "2", "3"]})
+        {
+          model_runner._ModelArchiver._BATCH_IDS_CHECKPOINT_ATTR_NAME:
+            ["1", "2", "3"]})
     checkpointMgrInstanceMock.loadModelDefinition.side_effect = (
       model_checkpoint_mgr.ModelNotFound("Model not found"))
 
@@ -642,7 +636,9 @@ class TestModelRunner(unittest.TestCase):
     inferenceArgs = "b"
     inputRecordSchema = [FieldMetaInfo("c1", "float", "")]
     anomalyScore1 = 1.111111
+    bestPredictions1 = {1: 1}
     anomalyScore2 = 2.222222
+    bestPredictions2 = {2: 2}
     dummyModelParams = dict(modelConfig=modelConfig,
                             inferenceArgs=inferenceArgs)
 
@@ -659,8 +655,10 @@ class TestModelRunner(unittest.TestCase):
     modelInstanceMock = Mock(
       run=Mock(
         side_effect=[
-          Mock(inferences=dict(anomalyScore=anomalyScore1)),
-          Mock(inferences=dict(anomalyScore=anomalyScore2))]))
+          Mock(inferences=dict(anomalyScore=anomalyScore1,
+                               multiStepBestPredictions=bestPredictions1)),
+          Mock(inferences=dict(anomalyScore=anomalyScore2,
+                               multiStepBestPredictions=bestPredictions2))]))
 
     modelFactoryClassMock.create.return_value = modelInstanceMock
 
@@ -715,17 +713,18 @@ class TestModelRunner(unittest.TestCase):
     requestObjects = requests[0].objects
     expectedResults = [
       ModelInferenceResult(
-        rowID=requestObjects[0].rowID, status=0, anomalyScore=anomalyScore1),
+        rowID=requestObjects[0].rowID, status=0, anomalyScore=anomalyScore1,
+        multiStepBestPredictions=bestPredictions1),
       ModelInferenceResult(
-        rowID=requestObjects[1].rowID, status=0, anomalyScore=anomalyScore2),
+        rowID=requestObjects[1].rowID, status=0, anomalyScore=anomalyScore2,
+        multiStepBestPredictions=bestPredictions2),
     ]
 
     swapperMock.submitResults.assert_called_once_with(
       modelID=modelID, results=expectedResults)
 
-
-  def testLoadFromFullAndSaveIncremental(
-    self, modelCheckpointMgrClassMock, modelSwapperInterfaceClassMock):
+  def testLoadFromFullAndSaveIncremental(self, modelCheckpointMgrClassMock,
+                                         modelSwapperInterfaceClassMock):
     # Test ModelRunner's inference-processing plumbing by sending
     # input rows with mocking of input stream, output, and model
     # access logic.
@@ -733,20 +732,24 @@ class TestModelRunner(unittest.TestCase):
 
     inputRecordSchema = [FieldMetaInfo("c1", "float", "")]
     anomalyScore1 = 1.111111
+    bestPredictions1 = {1: 1}
     anomalyScore2 = 2.222222
+    bestPredictions2 = {2: 2}
 
     modelInstanceMock = Mock(
       run=Mock(
         side_effect=[
-          Mock(inferences=dict(anomalyScore=anomalyScore1)),
-          Mock(inferences=dict(anomalyScore=anomalyScore2))]))
+          Mock(inferences=dict(anomalyScore=anomalyScore1,
+                               multiStepBestPredictions=bestPredictions1)),
+          Mock(inferences=dict(anomalyScore=anomalyScore2,
+                               multiStepBestPredictions=bestPredictions2))]))
 
     checkpointMgrInstanceMock = modelCheckpointMgrClassMock.return_value
     checkpointMgrInstanceMock.loadCheckpointAttributes. \
       return_value = (
-      {
-        model_runner._ModelArchiver._BATCH_IDS_CHECKPOINT_ATTR_NAME:
-          ["1", "2", "3"]})
+        {
+          model_runner._ModelArchiver._BATCH_IDS_CHECKPOINT_ATTR_NAME:
+            ["1", "2", "3"]})
     checkpointMgrInstanceMock.loadModelDefinition.return_value = (
       dict(inputSchema=inputRecordSchema))
     checkpointMgrInstanceMock.load.return_value = modelInstanceMock
@@ -806,9 +809,11 @@ class TestModelRunner(unittest.TestCase):
     requestObjects = requests[0].objects
     expectedResults = [
       ModelInferenceResult(
-        rowID=requestObjects[0].rowID, status=0, anomalyScore=anomalyScore1),
+        rowID=requestObjects[0].rowID, status=0, anomalyScore=anomalyScore1,
+        multiStepBestPredictions=bestPredictions1),
       ModelInferenceResult(
-        rowID=requestObjects[1].rowID, status=0, anomalyScore=anomalyScore2),
+        rowID=requestObjects[1].rowID, status=0, anomalyScore=anomalyScore2,
+        multiStepBestPredictions=bestPredictions2),
     ]
 
     swapperMock.submitResults.assert_called_once_with(
@@ -831,7 +836,9 @@ class TestModelRunner(unittest.TestCase):
     modelInstanceMock = Mock(
       run=Mock(
         side_effect=[
-          Mock(inferences=dict(anomalyScore=score)) for score in anomalyScores
+          Mock(inferences=dict(anomalyScore=score,
+                               multiStepBestPredictions={score: score}))
+          for score in anomalyScores
         ]
       )
     )
@@ -902,7 +909,8 @@ class TestModelRunner(unittest.TestCase):
     # Verify emitted results
     requestObjects = requests[0].objects
     expectedResults = [
-      ModelInferenceResult(rowID=rowid, status=0, anomalyScore=score)
+      ModelInferenceResult(rowID=rowid, status=0, anomalyScore=score,
+                           multiStepBestPredictions={score: score})
       for rowid, score in zip(
         [obj.rowID for obj in requestObjects], anomalyScores)
     ]
@@ -926,16 +934,24 @@ class TestModelRunner(unittest.TestCase):
     anomalyScore2 = 2.222222
     anomalyScore3 = 3.333333
     anomalyScore4 = 4.444444
+    bestPredictions1 = {1: 1}
+    bestPredictions2 = {2: 2}
+    bestPredictions3 = {3: 3}
+    bestPredictions4 = {4: 4}
 
     modelInstanceMock = Mock(
       run=Mock(
         side_effect=[
           # 2 results for catch-up from data samples in checkpoint
           # plus 2 more from new input rows
-          Mock(inferences=dict(anomalyScore=anomalyScore1)),
-          Mock(inferences=dict(anomalyScore=anomalyScore2)),
-          Mock(inferences=dict(anomalyScore=anomalyScore3)),
-          Mock(inferences=dict(anomalyScore=anomalyScore4))
+          Mock(inferences=dict(anomalyScore=anomalyScore1,
+                               multiStepBestPredictions=bestPredictions1)),
+          Mock(inferences=dict(anomalyScore=anomalyScore2,
+                               multiStepBestPredictions=bestPredictions2)),
+          Mock(inferences=dict(anomalyScore=anomalyScore3,
+                               multiStepBestPredictions=bestPredictions3)),
+          Mock(inferences=dict(anomalyScore=anomalyScore4,
+                               multiStepBestPredictions=bestPredictions4))
         ]
       )
     )
@@ -1017,9 +1033,11 @@ class TestModelRunner(unittest.TestCase):
     requestObjects = requests[0].objects
     expectedResults = [
       ModelInferenceResult(
-        rowID=requestObjects[0].rowID, status=0, anomalyScore=anomalyScore3),
+        rowID=requestObjects[0].rowID, status=0, anomalyScore=anomalyScore3,
+        multiStepBestPredictions=bestPredictions3),
       ModelInferenceResult(
-        rowID=requestObjects[1].rowID, status=0, anomalyScore=anomalyScore4),
+        rowID=requestObjects[1].rowID, status=0, anomalyScore=anomalyScore4,
+        multiStepBestPredictions=bestPredictions4),
     ]
 
     swapperMock.submitResults.assert_called_once_with(
@@ -1044,7 +1062,9 @@ class TestModelRunner(unittest.TestCase):
     modelInstanceMock = Mock(
       run=Mock(
         side_effect=[
-          Mock(inferences=dict(anomalyScore=score)) for score in anomalyScores
+          Mock(inferences=dict(anomalyScore=score,
+                               multiStepBestPredictions={score: score}))
+          for score in anomalyScores
         ]
       )
     )
@@ -1126,7 +1146,8 @@ class TestModelRunner(unittest.TestCase):
     # Verify emitted results
     requestObjects = requests[0].objects
     expectedResults = [
-      ModelInferenceResult(rowID=rowid, status=0, anomalyScore=score)
+      ModelInferenceResult(rowID=rowid, status=0, anomalyScore=score,
+                           multiStepBestPredictions={score: score})
       for rowid, score in zip(
         [obj.rowID for obj in requestObjects], anomalyScores[2:])
     ]
@@ -1147,11 +1168,11 @@ class TestModelRunner(unittest.TestCase):
       side_effect = model_checkpoint_mgr.ModelNotFound
 
     requestsPerCheckpoint = 10
-    with ConfigAttributePatch(
-        modelSwapperConfig.CONFIG_NAME,
-        modelSwapperConfig.baseConfigDir,
-        (("model_runner", "target_requests_per_checkpoint",
-          str(requestsPerCheckpoint)),)):
+    with ConfigAttributePatch(modelSwapperConfig.CONFIG_NAME,
+                              modelSwapperConfig.baseConfigDir,
+                              (("model_runner",
+                                "target_requests_per_checkpoint",
+                                str(requestsPerCheckpoint)),)):
       modelID = "abc"
       modelConfig = "a"
       inferenceArgs = "b"
@@ -1230,11 +1251,11 @@ class TestModelRunner(unittest.TestCase):
     # exactly-once-execution
 
     requestsPerCheckpoint = 10
-    with ConfigAttributePatch(
-        modelSwapperConfig.CONFIG_NAME,
-        modelSwapperConfig.baseConfigDir,
-        (("model_runner", "target_requests_per_checkpoint",
-          str(requestsPerCheckpoint)),)):
+    with ConfigAttributePatch(modelSwapperConfig.CONFIG_NAME,
+                              modelSwapperConfig.baseConfigDir,
+                              (("model_runner",
+                                "target_requests_per_checkpoint",
+                                str(requestsPerCheckpoint)),)):
       modelID = "abc"
       modelConfig = "a"
       inferenceArgs = "b"
@@ -1313,8 +1334,8 @@ class TestModelRunner(unittest.TestCase):
       self.assertEqual(swapperMock.submitResults.call_count, len(requests) // 2)
 
 
-  def testInferencePathWithModelNotFound(
-    self, modelCheckpointMgrClassMock, modelSwapperInterfaceClassMock):
+  def testInferencePathWithModelNotFound(self, modelCheckpointMgrClassMock,
+                                         modelSwapperInterfaceClassMock):
     # Test ModelRunner's inference-processing error plumbing by sending input
     # rows for a model that hasn't been defined, with mocking of input stream,
     # output, and model access logic.
@@ -1379,8 +1400,8 @@ class TestModelRunner(unittest.TestCase):
     self.assertIn("Inference failed", outputResults[1].errorMessage)
 
 
-  def testInferencePathWithGenericError(
-    self, modelCheckpointMgrClassMock, modelSwapperInterfaceClassMock):
+  def testInferencePathWithGenericError(self, modelCheckpointMgrClassMock,
+                                        modelSwapperInterfaceClassMock):
     # Test ModelRunner's inference-processing error plumbing by sending input
     # rows and simulating a generic Exception, with mocking of input stream,
     # output, and model access logic.

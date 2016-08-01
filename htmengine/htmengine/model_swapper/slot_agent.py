@@ -196,7 +196,7 @@ class SlotAgent(object):
 
     # ID of the model, if any, currently associated with this SlotAgent
     # instance; used for logging and error-checking at the interface only.
-    # WARNING: not syncrhonized with the event loop thread!
+    # WARNING: not synchronized with the event loop thread!
     self._modelID = None
 
     self._eventQ = Queue.Queue()
@@ -254,7 +254,7 @@ class SlotAgent(object):
     """ Submit a request to stop running this SlotAgent's current model
     gracefully; the request completes asynchronously; the slot agent will invoke
     the user-supplied modelFinishedCallback upon completion; the callback MUST
-    be acnowledged via releaseSlot() before starting the next model; See
+    be acknowledged via releaseSlot() before starting the next model; See
     startModel for more info about modelFinishedCallback.
     """
     assert self._modelID is not None
@@ -400,7 +400,6 @@ class _CurrentModelState(object):
     # Model ID of the model being executed in the ModelRunner process
     self.modelID = modelID
 
-
     # A ModelRunnerProxy-like instance
     self.modelRunner = modelRunner
 
@@ -416,10 +415,10 @@ class _CurrentModelState(object):
     self.stopModelRequested = False
 
     # True when model failed (e.g., due to IOError sending data to
-    # ModelRunner); can coinside with stopModelRequested
+    # ModelRunner); can coincide with stopModelRequested
     self.modelFailed = False
 
-    # ModelRunner's exist status when its exit is detected
+    # ModelRunner's exit status when its exit is detected
     self.modelExitStatus = None
 
     # Number of input batch objects forwarded to ModelRunner for processing

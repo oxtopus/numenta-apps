@@ -45,11 +45,11 @@ from htmengine import htmengineerrno
 from htmengine.htmengine_logging import getExtendedLogger, getStandardLogPrefix
 from htmengine.model_checkpoint_mgr import model_checkpoint_mgr
 from htmengine.model_checkpoint_mgr.model_checkpoint_mgr import (
-    ModelCheckpointMgr)
+  ModelCheckpointMgr)
 from htmengine.model_swapper import ModelSwapperConfig
 from htmengine.model_swapper.model_swapper_interface import (
-    ModelCommand, ModelCommandResult,
-    ModelInferenceResult, ModelInputRow, ModelSwapperInterface)
+  ModelCommand, ModelCommandResult, ModelInferenceResult, ModelInputRow,
+  ModelSwapperInterface)
 
 from nta.utils.logging_support_raw import LoggingSupport
 
@@ -179,8 +179,8 @@ class ModelRunner(object):
     totalRequests = 0
     totalDupBatches = 0
 
-    # Retrieve the batch IDs that went into the current checkpont since previous
-    # checkpoint
+    # Retrieve the batch IDs that went into the current checkpoint since
+    # previous checkpoint
     modelCheckpointBatchIDSet = self._archiver.modelCheckpointBatchIDSet
 
     try:
@@ -191,7 +191,7 @@ class ModelRunner(object):
         lastRequestBatch = None
 
         with self._swapperAPI.consumeRequests(
-            modelID=self._modelID, blocking=False) as consumer:
+          modelID=self._modelID, blocking=False) as consumer:
 
           if self._profiling:
             batchStartTime = time.time()
@@ -212,7 +212,7 @@ class ModelRunner(object):
               continue
 
             # NOTE: lastRequestBatch is used after this loop to ack this and
-            # preceeding batches
+            # preceding batches
             lastRequestBatch = candidateBatch
 
             currentRunBatchIDSet.add(lastRequestBatch.batchID)
@@ -311,7 +311,7 @@ class ModelRunner(object):
             readReadyList = select.select((sys.stdin,), (), (), 0)[0]
             if readReadyList:
               self._logger.debug("%r: SwapController wants to preempt us, "
-                                "leaving", self)
+                                 "leaving", self)
               self._done = True
     finally:
       if totalBatches == 0:
@@ -374,7 +374,8 @@ class ModelRunner(object):
       self._logger.exception("%r: %r failed;", self, command)
       return ModelCommandResult(
         commandID=command.commandID, method=command.method,
-        status=e.errno if isinstance(e, _ModelRunnerError) else htmengineerrno.ERR,
+        status=(e.errno if isinstance(e, _ModelRunnerError) else
+                htmengineerrno.ERR),
         errorMessage="%s - %r failed on modelID=%s: %s. (tb: ...%s)" % (
           datetime.utcnow().isoformat(), command, self._modelID,
           str(e) or repr(e),
@@ -509,16 +510,21 @@ class ModelRunner(object):
       return ModelInferenceResult(
         rowID=row.rowID,
         status=0,
-        anomalyScore=r.inferences["anomalyScore"])
+        anomalyScore=r.inferences["anomalyScore"],
+        multiStepBestPredictions=r.inferences.get("multiStepBestPredictions",
+                                                  dict()))
 
     except (Exception, _ModelRunnerError) as e:  # pylint: disable=W0703
       self._logger.exception("%r: Inference failed for row=%r", self, row)
-      return ModelInferenceResult(rowID=row.rowID,
-        status=e.errno if isinstance(e, _ModelRunnerError) else htmengineerrno.ERR,
+      return ModelInferenceResult(
+        rowID=row.rowID,
+        status=(e.errno if isinstance(e, _ModelRunnerError) else
+                htmengineerrno.ERR),
         errorMessage="%s - Inference failed for rowID=%s of modelID=%s (%r): "
-          "(tb: ...%s)" % (datetime.utcnow().isoformat(),
-                           row.rowID, self._modelID, e,
-                           traceback.format_exc()[-self._MAX_TRACEBACK_TAIL:]))
+                     "(tb: ...%s)" % (
+                       datetime.utcnow().isoformat(),
+                       row.rowID, self._modelID, e,
+                       traceback.format_exc()[-self._MAX_TRACEBACK_TAIL:]))
 
 
   def _loadModel(self):
@@ -859,7 +865,8 @@ def main(argv):
   parser = OptionParser(helpString)
 
   parser.add_option("--modelID", action="store", type="str",
-    help="The Model ID string that identifies the model to run.")
+                    help=("The Model ID string that identifies the model to "
+                          "run."))
 
   (options, args) = parser.parse_args(argv[1:])
   if len(args) > 0:

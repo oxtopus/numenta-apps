@@ -77,7 +77,7 @@ _INCONSISTENT_PREDICTED_FIELD_NAME_MSG = (
 
 
 
-def generateSwarmParams(stats):
+def generateSwarmParams(stats, classifierEnabled=False):
   """ Generate parameters for creating a model
 
   :param stats: dict with "min", "max" and optional "minResolution"; values must
@@ -100,6 +100,9 @@ def generateSwarmParams(stats):
     maxVal=maxVal,
     minResolution=minResolution)
 
+  # Classifier must be enabled to obtain predicted values
+  swarmParams["modelConfig"]["modelParams"]["clEnable"] = classifierEnabled
+
   swarmParams["inputRecordSchema"] = (
     fieldmeta.FieldMetaInfo("c0", fieldmeta.FieldMetaType.datetime,
                             fieldmeta.FieldMetaSpecial.timestamp),
@@ -117,6 +120,7 @@ def generateSwarmParamsFromCompleteModelParams(modelSpec):
   :param modelSpec: Model specification structure as defined by
     'htmengine/adapters/datasource/model_spec_schema.json'
   :type modelSpec: dict
+
   :returns: If a valid set of complete model params is present, returns a
     swarmParams object suitable for passing to startMonitoring() and
     startModel(); otherwise, an empty dict is returned
@@ -148,6 +152,7 @@ def generateSwarmParamsFromCompleteModelParams(modelSpec):
   swarmParams = dict()
   swarmParams["modelConfig"] = completeModelParams["modelConfig"]
   swarmParams["inferenceArgs"] = completeModelParams["inferenceArgs"]
+
   inputRecordSchema = (
     fieldmeta.FieldMetaInfo(completeModelParams["timestampFieldName"],
                             fieldmeta.FieldMetaType.datetime,

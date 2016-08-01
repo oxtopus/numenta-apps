@@ -25,20 +25,24 @@ HTM Engine Metric Datasource Adapter
 
 import copy
 import datetime
+import os
 
+from nta.utils.config import Config
+
+from htmengine import htmengine_logging
+from htmengine import repository
 from htmengine.adapters.datasource.datasource_adapter_iface import (
   DatasourceAdapterIface)
-
 import htmengine.exceptions as app_exceptions
-from htmengine import htmengine_logging
-
-from htmengine import repository
+import htmengine.model_swapper.utils as model_swapper_utils
 from htmengine.repository import schema
 from htmengine.repository.queries import MetricStatus
 from htmengine.runtime import scalar_metric_utils
 import htmengine.utils
-import htmengine.model_swapper.utils as model_swapper_utils
-from nupic.data import fieldmeta
+
+
+
+config = Config("application.conf", os.environ.get("APPLICATION_CONFIG_PATH"))
 
 
 
@@ -73,6 +77,8 @@ class _CustomDatasourceAdapter(DatasourceAdapterIface):
 
     self.connectionFactory = connectionFactory
 
+    self._includeMultiStepBestPredictions = config.getboolean(
+      "global", "multiStepBestPredictions")
 
   @repository.retryOnTransientErrors
   def createMetric(self, metricName):
@@ -319,7 +325,8 @@ class _CustomDatasourceAdapter(DatasourceAdapterIface):
       stats = {"min": minVal, "max": maxVal, "minResolution": minResolution}
       self._log.debug("monitorMetric: metric=%s, stats=%r", metricId, stats)
 
-      swarmParams = scalar_metric_utils.generateSwarmParams(stats)
+      swarmParams = scalar_metric_utils.generateSwarmParams(
+        stats, self._includeMultiStepBestPredictions)
 
     self._startMonitoringWithRetries(metricId, modelSpec, swarmParams)
 
@@ -411,7 +418,8 @@ class _CustomDatasourceAdapter(DatasourceAdapterIface):
 
     stats = self._getMetricStatistics(metricId)
 
-    swarmParams = scalar_metric_utils.generateSwarmParams(stats)
+    swarmParams = scalar_metric_utils.generateSwarmParams(
+      stats, self._includeMultiStepBestPredictions)
 
     scalar_metric_utils.startModel(metricId,
                                    swarmParams=swarmParams,

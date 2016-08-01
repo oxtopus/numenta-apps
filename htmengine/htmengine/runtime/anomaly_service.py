@@ -23,7 +23,6 @@
 import itertools
 import json
 import logging
-from collections import namedtuple
 import math
 from optparse import OptionParser
 import os
@@ -32,7 +31,9 @@ import time
 import zlib
 
 from nta.utils import amqp
+from nta.utils.config import Config
 from nta.utils.date_time_utils import epochFromNaiveUTCDatetime
+from nta.utils.logging_support_raw import LoggingSupport
 from nta.utils.message_bus_connector import MessageBusConnector
 from nta.utils.message_bus_connector import MessageProperties
 
@@ -52,10 +53,6 @@ from htmengine.model_swapper.model_swapper_interface import (
 from htmengine.htmengine_logging import (getExtendedLogger,
                                          getStandardLogPrefix,
                                          getMetricLogPrefix)
-
-from nta.utils.logging_support_raw import LoggingSupport
-from nta.utils.config import Config
-
 
 
 
@@ -87,14 +84,15 @@ g_log = _getLogger()
 
 
 class MutableMetricDataRow(object):
-  __slots__ = ("anomaly_score", "display_value", "metric_value",
-               "raw_anomaly_score", "rowid", "timestamp", "uid")
+  __slots__ = ("multi_step_best_predictions", "anomaly_score", "display_value",
+               "metric_value", "raw_anomaly_score", "rowid", "timestamp", "uid")
 
-  def __init__(self, anomaly_score, display_value, metric_value,
-               raw_anomaly_score, rowid, timestamp, uid):
+  def __init__(self, multi_step_best_predictions, anomaly_score, display_value,
+               metric_value, raw_anomaly_score, rowid, timestamp, uid):
     # Disable "Invalid attribute name" warnings here; these attrs need to match
     #  metric_data table column names
     # pylint: disable=C0103
+    self.multi_step_best_predictions = multi_step_best_predictions
     self.anomaly_score = anomaly_score
     self.display_value = display_value
     self.metric_value = metric_value
@@ -106,10 +104,10 @@ class MutableMetricDataRow(object):
 
   def __repr__(self):
     return ("%s<uid=%s, rowid=%s, ts=%s, value=%s, raw=%s, anomlik=%s, "
-            "display=%s>") % (
-      self.__class__.__name__, self.uid, self.rowid, self.timestamp,
-      self.metric_value, self.raw_anomaly_score, self.anomaly_score,
-      self.display_value)
+            "display=%s, multi_step_best_predictions=%s>") % (
+              self.__class__.__name__, self.uid, self.rowid, self.timestamp,
+              self.metric_value, self.raw_anomaly_score, self.anomaly_score,
+              self.display_value, self.multi_step_best_predictions)
 
 
 
@@ -163,7 +161,7 @@ class AnomalyService(object):
   ``ModelSwapperInterface().consumeResults()`` and the associated
   ``MetricData`` rows are updated with the results of applying
   ``AnomalyLikelihoodHelper().updateModelAnomalyScores()`` and finally the
-  results are packaged up as as objects complient with
+  results are packaged up as as objects compliant with
   ``model_inference_results_msg_schema.json`` and published to the model
   results exchange, as identified by the ``results_exchange_name``
   configuration directive from the ``metric_streamer`` section of
@@ -243,7 +241,7 @@ class AnomalyService(object):
     # Create Model
     if result.method == "defineModel":
       self._log.info("Model was created for <%s>" % (
-                      getMetricLogPrefix(metricObj)))
+        getMetricLogPrefix(metricObj)))
 
       if metricObj.status == MetricStatus.CREATE_PENDING:
         with engine.connect() as conn:
@@ -268,7 +266,7 @@ class AnomalyService(object):
 
     A row's anomaly_score value will be set to and remain at 0 in the
     first self._statisticsMinSampleSize rows; once we get enough inference
-    results to create an anomaly likelyhood model, anomaly_score will be
+    results to create an anomaly likelihood model, anomaly_score will be
     computed on the subsequent rows.
 
     :param inferenceResults: a sequence of ModelInferenceResult instances in the
@@ -301,9 +299,9 @@ class AnomalyService(object):
       with engine.connect() as conn:
         metricObj = repository.getMetric(conn, metricID)
     except ObjectNotFoundError:
-      # Ignore inferences for unkonwn models. Typically, this is is the result
+      # Ignore inferences for unknown models. Typically, this is is the result
       # of a deleted model. Another scenario where this might occur is when a
-      # developer resets db while there are result messages still on the
+      # developer resets the db while there are result messages still on the
       # message bus. It would be an error if this were to occur in production
       # environment.
       self._log.warning("Received inference results for unknown model=%s; "
@@ -351,12 +349,12 @@ class AnomalyService(object):
         metricDataRows[0].rowid, metricDataRows[-1].rowid, metricID, e)
       return None
 
-    # Update anomaly scores based on the new results
+   # Update anomaly scores based on the new results
     anomalyLikelihoodParams = (
       self.likelihoodHelper.updateModelAnomalyScores(
-                                                engine=engine,
-                                                metricObj=metricObj,
-                                                metricDataRows=metricDataRows))
+        engine=engine,
+        metricObj=metricObj,
+        metricDataRows=metricDataRows))
 
     # Update metric data rows with rescaled display values
     # NOTE: doing this outside the updateColumns loop to avoid holding row locks
@@ -375,7 +373,9 @@ class AnomalyService(object):
           for metricData in metricDataRows:
             fields = {"raw_anomaly_score": metricData.raw_anomaly_score,
                       "anomaly_score": metricData.anomaly_score,
-                      "display_value": metricData.display_value}
+                      "display_value": metricData.display_value,
+                      "multi_step_best_predictions":
+                        json.dumps(metricData.multi_step_best_predictions)}
             repository.updateMetricDataColumns(conn, metricData, fields)
 
           self._updateAnomalyLikelihoodParams(
@@ -402,7 +402,7 @@ class AnomalyService(object):
   @classmethod
   def _updateAnomalyLikelihoodParams(cls, conn, metricId, modelParamsJson,
                                      likelihoodParams):
-    """Update and save anomaly_params with the given likelyhoodParams if the
+    """Update and save anomaly_params with the given likelihoodParams if the
        metric is ACTIVE.
 
     :param conn: Transactional SQLAlchemy connection object
@@ -462,7 +462,8 @@ class AnomalyService(object):
           ts=epochFromNaiveUTCDatetime(row.timestamp),
           value=row.metric_value,
           rawAnomaly=row.raw_anomaly_score,
-          anomaly=row.anomaly_score
+          anomaly=row.anomaly_score,
+          multiStepBestPredictions=json.dumps(row.multi_step_best_predictions)
         )
         for row in dataRows
       ]
@@ -551,15 +552,15 @@ class AnomalyService(object):
 
     :raises RejectedInferenceResultBatch: if the given result batch is rejected
     """
-
-    for result, enumeratedMetricData in itertools.izip_longest(
-                                          inferenceResults,
-                                          enumerate(metricDataRows)):
+    for result, enumeratedMetricData in itertools.izip_longest(inferenceResults,
+                                                               enumerate(
+                                                                 metricDataRows)
+                                                              ):
 
       if enumeratedMetricData is None:
         raise RejectedInferenceResultBatch(
-            "No MetricData row for inference result=%r of model=<%r>" % (
-                result, metricObj))
+          "No MetricData row for inference result=%r of model=<%r>" % (
+            result, metricObj))
       index, metricData = enumeratedMetricData
 
       if result is None:
@@ -610,6 +611,8 @@ class AnomalyService(object):
       mutableMetricData = MutableMetricDataRow(**dict(metricData.items()))
       mutableMetricData.raw_anomaly_score = result.anomalyScore
       mutableMetricData.anomaly_score = 0
+      mutableMetricData.multi_step_best_predictions = (
+        result.multiStepBestPredictions)
       metricDataRows[index] = mutableMetricData
 
 
@@ -629,20 +632,19 @@ class AnomalyService(object):
 
 
   def run(self):
-    """
-    Consumes pending results.  Once result batch arrives, it will be dispatched
-    to the correct model command result handler.
+    """ Consumes pending results.  Once result batch arrives, it will be
+    dispatched to the correct model command result handler.
 
     :see: `_processModelCommandResult` and `_processModelInferenceResults`
     """
     # Properties for publishing model command results on RabbitMQ exchange
     modelCommandResultProperties = MessageProperties(
-        deliveryMode=amqp.constants.AMQPDeliveryModes.PERSISTENT_MESSAGE,
-        headers=dict(dataType="model-cmd-result"))
+      deliveryMode=amqp.constants.AMQPDeliveryModes.PERSISTENT_MESSAGE,
+      headers=dict(dataType="model-cmd-result"))
 
     # Properties for publishing model inference results on RabbitMQ exchange
     modelInferenceResultProperties = MessageProperties(
-        deliveryMode=amqp.constants.AMQPDeliveryModes.PERSISTENT_MESSAGE)
+      deliveryMode=amqp.constants.AMQPDeliveryModes.PERSISTENT_MESSAGE)
 
     # Declare an exchange for forwarding our results
     with amqp.synchronous_amqp_client.SynchronousAmqpClient(

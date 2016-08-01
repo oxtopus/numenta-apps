@@ -70,19 +70,19 @@ App layer reads results::
 from collections import namedtuple
 import datetime
 import json
-import time
 import types
 import uuid
 import weakref
 
 from htmengine import exceptions as engine_exceptions
+from htmengine import htmengine_logging
 from htmengine.model_swapper import ModelSwapperConfig
 
 from nta.utils.date_time_utils import epochFromNaiveUTCDatetime
 from nta.utils import message_bus_connector
 from nta.utils.message_bus_connector import MessageBusConnector
 
-from htmengine import htmengine_logging
+
 
 _MODULE_NAME = "htmengine.model_swapper.model_swapper_interface"
 
@@ -373,19 +373,28 @@ class ModelInferenceResult(_ModelRequestResultBase):
   """ Model inference result container """
 
   # NOTE: also used by serialization/deserialization in our base class
-  __slots__ = ("rowID", "status", "anomalyScore", "errorMessage")
+  __slots__ = ("rowID", "status", "anomalyScore", "multiStepBestPredictions",
+               "errorMessage")
 
   __STATE_SIGNATURE__ = "iR"
 
 
-  def __init__(self, rowID, status, anomalyScore=None, errorMessage=None):
-    """ __init__(rowID, status, anomalyScore|errorMessage)
+  def __init__(self, rowID, status, anomalyScore=None,
+               multiStepBestPredictions=None,
+               errorMessage=None):
+    """ __init__(rowID, status, anomalyScore) or
+        __init__(rowID, status, anomalyScore, multiStepBestPredictions) or
+        __init__(rowID, status, errorMessage)
 
     :param rowID: rowID id of the corresponding input record
     :param status: integer; 0 (zero) means success, otherwise it's an error code
       from htmengine.htmengineerno
     :param anomalyScore: the Anomaly Score floating point value if status is 0
       (zero), omit otherwise
+    :param multiStepBestPredictions: best model predictions according to the
+     associated classifier; key is the number of steps in the future for which
+     the prediction is made
+    :type multiStepBestPredictions: dict
     :param errorMessage: error message if status is non-zero, omit otherwise
     """
     assert isinstance(status, (int, long)), (
@@ -395,6 +404,10 @@ class ModelInferenceResult(_ModelRequestResultBase):
       assert isinstance(anomalyScore, (int, long, float)), (
         "Expected numeric anomaly score with status=0, but got: " +
         repr(anomalyScore))
+      assert (multiStepBestPredictions is None or
+              isinstance(multiStepBestPredictions, dict)), \
+        ("Expected dict multi-step best predictions with status=0, but got: " +
+         repr(multiStepBestPredictions))
       assert errorMessage is None, (
         "Unexpected errorMessage with status=0: " + repr(errorMessage))
     else:
@@ -403,18 +416,26 @@ class ModelInferenceResult(_ModelRequestResultBase):
         repr(errorMessage))
       assert anomalyScore is None, (
         "Unexpected anomaly score with non-zero status: " + repr(errorMessage))
+      assert multiStepBestPredictions is None, (
+        "Unexpected multiStepBestPredictions with non-zero status: " +
+        repr(errorMessage))
 
     self.rowID = rowID
     self.status = status
     self.anomalyScore = anomalyScore
+    self.multiStepBestPredictions = multiStepBestPredictions
     self.errorMessage = errorMessage
 
 
   def __repr__(self):
-    return "%s<rowID=%s, status=%s%s>" % (
-      self.__class__.__name__, self.rowID, self.status,
-      (", anomalyScore=%s" % (self.anomalyScore,) if self.status == 0
-       else ", errorMsg=%s" % (self.errorMessage,)))
+    if self.status == 0:
+      reprBody = ", anomalyScore=%s, multiStepBestPredictions=%s" % (
+        self.anomalyScore, self.multiStepBestPredictions,)
+    else:
+      reprBody = ", errorMsg=%s" % (self.errorMessage,)
+
+    return "%s<rowID=%s, status=%s%s>" % (self.__class__.__name__, self.rowID,
+                                          self.status, reprBody)
 
 
 
@@ -661,8 +682,7 @@ class ModelSwapperInterface(object):
 
   def _getModelIDFromInputQName(self, mqName):
     assert mqName.startswith(self._modelInputQueueNamePrefix), (
-      "mq=%s doesn't start with %s") % (
-      mqName, self._modelInputQueueNamePrefix)
+      "mq=%s doesn't start with %s") % (mqName, self._modelInputQueueNamePrefix)
 
     return mqName[len(self._modelInputQueueNamePrefix):]
 
@@ -866,9 +886,9 @@ class ModelSwapperInterface(object):
     NOTE: This API is intended for Engine Model Runners.
 
     :param modelID: a string that uniquely identifies the target model.
-    :param blocking: if True, the iterable will block until another batch becomes
-      available; if False, the iterable will terminate iteration when no more
-      batches are available in the queue. [defaults to True]
+    :param blocking: if True, the iterable will block until another batch
+      becomes available; if False, the iterable will terminate iteration when
+      no more batches are available in the queue. [defaults to True]
 
     :returns: an instance of model_swapper_interface._MessageConsumer iterable;
       IMPORTANT: the caller is responsible for closing it before closing this

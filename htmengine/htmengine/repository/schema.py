@@ -135,6 +135,8 @@ metric_data = Table(  # pylint: disable=C0103
     Column("display_value",
            INTEGER(),
            autoincrement=False),
+    Column("multi_step_best_predictions",
+           TEXT()),
     schema=None,
 )
 
