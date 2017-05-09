@@ -54,7 +54,7 @@ class CustomMenuController: UIViewController, UIPopoverControllerDelegate, MFMai
         // self.navigationItem.rightBarButtonItem = self.editButtonItem()
         
         let tapRec = UITapGestureRecognizer()
-        tapRec.addTarget(self, action: "dismiss:")
+        tapRec.addTarget(self, action: #selector(CustomMenuController.dismiss(_:)))
         
         self.view.addGestureRecognizer(tapRec)
         
@@ -72,36 +72,36 @@ class CustomMenuController: UIViewController, UIPopoverControllerDelegate, MFMai
          show("showTutorial")
     }
     
-    func show ( name : String){
+    func show ( _ name : String){
        
-        self.presentingController!.navigationController!.performSegueWithIdentifier (name, sender: nil)
-         self.presentingController!.dismissViewControllerAnimated(false, completion: nil)
+        self.presentingController!.navigationController!.performSegue (withIdentifier: name, sender: nil)
+         self.presentingController!.dismiss(animated: false, completion: nil)
     }
     
     
-    @IBAction func dismiss( sender: UIView ){
-        self.presentingController!.dismissViewControllerAnimated(true, completion: nil)
+    @IBAction func dismiss( _ sender: UIView ){
+        self.presentingController!.dismiss(animated: true, completion: nil)
     }
 
-    @IBAction func showAbout( sender: UIView ){
+    @IBAction func showAbout( _ sender: UIView ){
       // Google Analytics
       let tracker = GAI.sharedInstance().defaultTracker
-      tracker.set(kGAIScreenName, value: "com.numenta.taurus.preference.AboutActivity")
+      tracker?.set(kGAIScreenName, value: "com.numenta.taurus.preference.AboutActivity")
       let builder = GAIDictionaryBuilder.createScreenView()
-      tracker.send(builder.build() as [NSObject : AnyObject])
+      tracker?.send(builder?.build() as! [AnyHashable: Any])
 
       show("showAbout")
     }
     
-    @IBAction func showSettings( sender: UIView ){
-        if let appSettings = NSURL(string: UIApplicationOpenSettingsURLString) {
+    @IBAction func showSettings( _ sender: UIView ){
+        if let appSettings = URL(string: UIApplicationOpenSettingsURLString) {
             // Google Analytics
             let tracker = GAI.sharedInstance().defaultTracker
-            tracker.set(kGAIScreenName, value: "com.numenta.taurus.preference.SettingsActivity")
+            tracker?.set(kGAIScreenName, value: "com.numenta.taurus.preference.SettingsActivity")
             let builder = GAIDictionaryBuilder.createScreenView()
-            tracker.send(builder.build() as [NSObject : AnyObject])
+            tracker?.send(builder?.build() as! [AnyHashable: Any])
 
-            UIApplication.sharedApplication().openURL(appSettings)
+            UIApplication.shared.openURL(appSettings)
             self.dismiss(sender)
         }
     }
@@ -109,7 +109,7 @@ class CustomMenuController: UIViewController, UIPopoverControllerDelegate, MFMai
     @IBAction func share( ){
        
         let shareService = ShareService()
-        self.presentingController!.dismissViewControllerAnimated(false, completion: nil)
+        self.presentingController!.dismiss(animated: false, completion: nil)
 
         shareService.share(self.presentingController!)
         
@@ -119,10 +119,10 @@ class CustomMenuController: UIViewController, UIPopoverControllerDelegate, MFMai
       
         let shareService = ShareService()
         
-        self.presentingController!.dismissViewControllerAnimated(false, completion: nil)
+        self.presentingController!.dismiss(animated: false, completion: nil)
         
         
-        let mailDelegate = UIApplication.sharedApplication().delegate as! MFMailComposeViewControllerDelegate
+        let mailDelegate = UIApplication.shared.delegate as! MFMailComposeViewControllerDelegate
 
         
       //  self.presentingController!.dismissViewControllerAnimated(false, completion: nil)
@@ -133,24 +133,24 @@ class CustomMenuController: UIViewController, UIPopoverControllerDelegate, MFMai
   
     
     
-    static func showMenu( controller : UIViewController ){
+    static func showMenu( _ controller : UIViewController ){
             let storyboard : UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
-            let vc = storyboard.instantiateViewControllerWithIdentifier("CustomMenuController") as! CustomMenuController
-            vc.modalPresentationStyle = UIModalPresentationStyle.Popover
+            let vc = storyboard.instantiateViewController(withIdentifier: "CustomMenuController") as! CustomMenuController
+            vc.modalPresentationStyle = UIModalPresentationStyle.popover
            // let popover: UIPopoverPresentationController = vc.popoverPresentationController!
             //popover.barButtonItem = sender
-            vc.modalPresentationStyle = UIModalPresentationStyle.OverCurrentContext
+            vc.modalPresentationStyle = UIModalPresentationStyle.overCurrentContext
 
             vc.presentingController = controller
         
-            controller.modalPresentationStyle = UIModalPresentationStyle.OverCurrentContext
-            controller.presentViewController(vc, animated: true, completion:nil)
+            controller.modalPresentationStyle = UIModalPresentationStyle.overCurrentContext
+            controller.present(vc, animated: true, completion:nil)
 
     }
     
-    func adaptivePresentationStyleForPresentationController(controller: UIPresentationController) -> UIModalPresentationStyle {
+    func adaptivePresentationStyleForPresentationController(_ controller: UIPresentationController) -> UIModalPresentationStyle {
         //   return UIModalPresentationStyle.FullScreen
-        return UIModalPresentationStyle.Popover
+        return UIModalPresentationStyle.popover
         
         //  PresentationOverCurrentContext
     }

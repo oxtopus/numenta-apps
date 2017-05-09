@@ -24,7 +24,7 @@
 /**
 * Helper class representing one "metric" record
 */
-public class Metric {
+open class Metric {
  //   let serialVersionUID: Int64 = 5441566818295535142
     //  /** Database Table name */
     static let TABLE_NAME: String! = "metric"
@@ -39,19 +39,20 @@ public class Metric {
     var lastTimestamp: Int64
 
     init(_ cursor: FMResultSet!) {
-       self.metricId = cursor.stringForColumn("metric_id")
-        self.lastRowId = cursor.intForColumn("last_rowid")
-        self.name = cursor.stringForColumn("name")
-        self.instanceId = cursor.stringForColumn("instance_id")
-        self.serverName = cursor.stringForColumn("server_name")
-        self.lastTimestamp = cursor.longLongIntForColumn("last_timestamp")
+       self.metricId = cursor.string(forColumn: "metric_id")
+        self.lastRowId = cursor.int(forColumn: "last_rowid")
+        self.name = cursor.string(forColumn: "name")
+        self.instanceId = cursor.string(forColumn: "instance_id")
+        self.serverName = cursor.string(forColumn: "server_name")
+        self.lastTimestamp = cursor.longLongInt(forColumn: "last_timestamp")
         //  // Get metric JSON Parameters from the database
-        self.parameters = cursor.stringForColumn("parameters")
+        self.parameters = cursor.string(forColumn: "parameters")
         
         if (self.parameters != nil){
-           let dataFromString = self.parameters.dataUsingEncoding(NSUTF8StringEncoding, allowLossyConversion: false)
-        
-            self.parametersJson =  JSON( data: dataFromString!)
+            let dataFromString = self.parameters.data(using: String.Encoding.utf8, allowLossyConversion: false)
+            do {
+                self.parametersJson = try JSON( data: dataFromString!)
+            } catch { print(error)}
         }
     }
 
@@ -70,26 +71,26 @@ public class Metric {
 
     func getValues() -> Dictionary<String, AnyObject>! {
         var values = Dictionary<String, AnyObject>()
-        values["metric_id"] = self.metricId
-        values["last_rowid"] = NSNumber(int:self.lastRowId)
-        values["name"] = self.name
-        values["instance_id"] = self.instanceId
-        values["server_name"] = self.serverName
-        values["last_timestamp"] = NSNumber(longLong:self.lastTimestamp)
+        values["metric_id"] = self.metricId as AnyObject
+        values["last_rowid"] = NSNumber(value: self.lastRowId as Int32)
+        values["name"] = self.name as AnyObject
+        values["instance_id"] = self.instanceId as AnyObject
+        values["server_name"] = self.serverName as AnyObject
+        values["last_timestamp"] = NSNumber(value: self.lastTimestamp as Int64)
         if self.parameters != nil {
-            values["parameters"] = self.parameters
+            values["parameters"] = self.parameters as AnyObject
         }
         return values
     }
 
-    func getParameter(name: String!) -> String! {
+    func getParameter(_ name: String!) -> String! {
         if parametersJson != nil {
             return parametersJson[name].stringValue
         }
         return nil
     }
 
-    func getMetricSpec(name: String!) -> String! {
+    func getMetricSpec(_ name: String!) -> String! {
         if parametersJson != nil {
             let spec: JSON! = parametersJson["metricSpec"]
             if spec != nil {
@@ -99,7 +100,7 @@ public class Metric {
         return nil
     }
 
-    func getUserInfo(name: String!) -> String! {
+    func getUserInfo(_ name: String!) -> String! {
         if parametersJson != nil {
             
             let spec: JSON! = parametersJson["metricSpec"]
@@ -148,7 +149,7 @@ public class Metric {
         return self.lastTimestamp
     }
 
-    func setLastTimestamp(lastTimestamp: Int64) {
+    func setLastTimestamp(_ lastTimestamp: Int64) {
         self.lastTimestamp = lastTimestamp
     }
 

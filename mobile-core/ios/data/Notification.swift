@@ -20,7 +20,7 @@
   *
   */
 
-public class Notification {
+open class Notification {
   
     static let TABLE_NAME: String! = "notification"
     var id: Int32
@@ -31,12 +31,12 @@ public class Notification {
     var description: String!
 
     init(cursor: FMResultSet!) {
-        self.id = cursor.intForColumn("_id")
-        self.notificationId = cursor.stringForColumn("notification_id")
-        self.metricId = cursor.stringForColumn("metric_id")
-        self.timestamp = cursor.longLongIntForColumn("timestamp")
-        self.read = cursor.intForColumn("read") == 1
-        self.description = cursor.stringForColumn("description")
+        self.id = cursor.int(forColumn: "_id")
+        self.notificationId = cursor.string(forColumn: "notification_id")
+        self.metricId = cursor.string(forColumn: "metric_id")
+        self.timestamp = cursor.longLongInt(forColumn: "timestamp")
+        self.read = cursor.int(forColumn: "read") == 1
+        self.description = cursor.string(forColumn: "description")
     }
 
     init(notificationId: String!, metricId: String!, timestamp: Int64, read: Bool, description: String!) {
@@ -51,12 +51,12 @@ public class Notification {
     func getValues() -> Dictionary<String, AnyObject>! {
         var values = Dictionary<String, AnyObject>()
        
-        values["_id"] = NSNumber(int:self.id)
-        values["notification_id"] = self.notificationId
-        values["metric_id"] = self.metricId
-            values["timestamp"] = NSNumber(longLong:self.timestamp)
-            values["read"] = NSNumber(bool: self.read )
-        values["description"] = self.description
+        values["_id"] = NSNumber(value: self.id as Int32)
+        values["notification_id"] = self.notificationId as AnyObject
+        values["metric_id"] = self.metricId as AnyObject
+            values["timestamp"] = NSNumber(value: self.timestamp as Int64)
+            values["read"] = NSNumber(value: self.read as Bool)
+        values["description"] = self.description as AnyObject
         return values
     }
 

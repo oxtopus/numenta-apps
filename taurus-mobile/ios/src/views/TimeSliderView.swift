@@ -25,11 +25,11 @@ import UIKit
 
 class TimeSliderView: UIView {
 
-    var endDate :NSDate = NSDate()
+    var endDate :Date = Date()
     var showTop : Bool = true
     var showBottom : Bool = true
     var showBackground = true
-    var calendarTime : NSDate = NSDate()
+    var calendarTime : Date = Date()
     var transparentBackground = false
     var collapsed = false
     var disableTouches : Bool = false
@@ -41,10 +41,10 @@ class TimeSliderView: UIView {
     var labelCenterTop : Double  = 5.0
 
 
-    let labelFormatter = NSDateFormatter()
+    let labelFormatter = DateFormatter()
 
-    var openColor : CGColorRef =   UIColor.whiteColor().CGColor
-    var closedColor : CGColorRef =  UIColor(red: 192.0/255.0, green: 192.0/255.0, blue: 192.0/255.0, alpha: 80.0/255.0).CGColor
+    var openColor : CGColor =   UIColor.white.cgColor
+    var closedColor : CGColor =  UIColor(red: 192.0/255.0, green: 192.0/255.0, blue: 192.0/255.0, alpha: 80.0/255.0).cgColor
 
     let leftMargin =  Appearence.viewMargin
 
@@ -69,7 +69,7 @@ class TimeSliderView: UIView {
     /** draw the view*
      -prameter rect: rect to draw in
      */
-    override func drawRect(rect: CGRect) {
+    override func draw(_ rect: CGRect) {
         var bar = chartTotalBars
         var previousCollapsed = false
 
@@ -104,14 +104,14 @@ class TimeSliderView: UIView {
             if (showBackground){
 
 
-                CGContextSaveGState( context)
+                context?.saveGState()
 
 
                 if (open){
-                    CGContextSetFillColorWithColor(context, self.openColor)
+                    context?.setFillColor(self.openColor)
 
                 }else{
-                    CGContextSetFillColorWithColor(context, self.closedColor)
+                    context?.setFillColor(self.closedColor)
                 }
 
 
@@ -123,19 +123,19 @@ class TimeSliderView: UIView {
 
                 let width :Double = ceil(lastLeft - left)
                 lastLeft  -= width
-                let backRect : CGRect = CGRectMake(floor(CGFloat(lastLeft)), CGFloat(top), (CGFloat(width)), CGFloat(bottom))
+                let backRect : CGRect = CGRect(x: floor(CGFloat(lastLeft)), y: CGFloat(top), width: (CGFloat(width)), height: CGFloat(bottom))
                 //  print (backRect)
 
-                CGContextSetAllowsAntialiasing (context, false)
-                CGContextFillRect(context, backRect)
-                CGContextSetAllowsAntialiasing (context, true)
+                context?.setAllowsAntialiasing (false)
+                context?.fill(backRect)
+                context?.setAllowsAntialiasing (true)
 
-                CGContextRestoreGState( context)
+                context?.restoreGState()
 
             }
 
             if (!previousCollapsed ){
-                calendarTime = NSDate(timeIntervalSince1970: Double(time)/1000.0)
+                calendarTime = Date(timeIntervalSince1970: Double(time)/1000.0)
                 //drawLabelsBackground()
                 let hourOfDay = getHour (calendarTime)
                 if (hourOfDay%3==0){
@@ -163,14 +163,14 @@ class TimeSliderView: UIView {
             //      lastLeft = left
             left -= barWidth
             time -= interval
-            bar--
+            bar -= 1
 
         }
         // Draw Seperator line
-        CGContextSetStrokeColorWithColor(context, UIColor.lightGrayColor().CGColor)
-        CGContextMoveToPoint(context, CGFloat(10.0), CGFloat(20.0))
-        CGContextAddLineToPoint(context, CGFloat(rect.width-10.0),  CGFloat(20.0))
-        CGContextStrokePath(context)
+        context?.setStrokeColor(UIColor.lightGray.cgColor)
+        context?.move(to: CGPoint(x: CGFloat(10.0), y: CGFloat(20.0)))
+        context?.addLine(to: CGPoint(x: CGFloat(rect.width-10.0), y: CGFloat(20.0)))
+        context?.strokePath()
     }
 
 
@@ -182,22 +182,22 @@ class TimeSliderView: UIView {
      - parameter right: right
      - parameter bottom: bottom of drawing rectangle
      */
-    func drawLabel( rect: CGRect, time: Int64, left :Double, top: Double, right: Double, bottom: Double) {
+    func drawLabel( _ rect: CGRect, time: Int64, left :Double, top: Double, right: Double, bottom: Double) {
         // set the text color to dark gray
         let fieldColor: UIColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
         let fontName = "HelveticaNeue-Bold"
         let helveticaBold = UIFont(name: fontName, size: 12.0)
 
-        let date  = NSDate(timeIntervalSince1970: Double(time)/1000.0)
-        let text : NSString  = labelFormatter.stringFromDate(date)
+        let date  = Date(timeIntervalSince1970: Double(time)/1000.0)
+        let text : NSString  = labelFormatter.string(from: date) as NSString
 
         if (self.showTop){
-            text.drawAtPoint(CGPointMake(CGFloat(left), CGFloat(top+labelCenterTop)),
+            text.draw(at: CGPoint(x: CGFloat(left), y: CGFloat(top+labelCenterTop)),
                 withAttributes: [NSFontAttributeName : helveticaBold!,  NSForegroundColorAttributeName: fieldColor])
         }
 
         if (self.showBottom){
-            text.drawAtPoint(CGPointMake(CGFloat(left), CGFloat(bottom-labelCenterBottom)),
+            text.draw(at: CGPoint(x: CGFloat(left), y: CGFloat(bottom-labelCenterBottom)),
                 withAttributes: [NSFontAttributeName : helveticaBold!,  NSForegroundColorAttributeName: fieldColor])
 
         }
@@ -208,22 +208,22 @@ class TimeSliderView: UIView {
      - parameter time: time to get hour of
      - returns: hour of day in local time
      */
-    func getHour (time : NSDate)->Int{
-        let calendar = NSCalendar.autoupdatingCurrentCalendar()
-        let comp = calendar.components((NSCalendarUnit.Hour), fromDate: time)
+    func getHour (_ time : Date)->Int{
+        let calendar = Calendar.autoupdatingCurrent
+        let comp = (calendar as NSCalendar).components((NSCalendar.Unit.hour), from: time)
         let hour = comp.hour
-        return hour
+        return hour!
     }
     
     
     /** allow ignoring of touches to allow the views behind the time slider view to handle the event
      */
-    override func pointInside(point: CGPoint,
-        withEvent event: UIEvent?) -> Bool {
+    override func point(inside point: CGPoint,
+        with event: UIEvent?) -> Bool {
             if (disableTouches ){
                 
             }else{
-                return super.pointInside( point, withEvent: event)
+                return super.point( inside: point, with: event)
             }
             return false
     }

@@ -26,7 +26,7 @@
 protocol CoreDatabase {
     func getVersion() -> Int
     func getFileName() -> String!
-    func getServerName(_instanceId: String!) -> String!
+    func getServerName(_ _instanceId: String!) -> String!
     
     func getReadableDatabase() -> FMDatabase!
     func getWritableDatabase() -> FMDatabase!
@@ -37,42 +37,42 @@ protocol CoreDatabase {
     func deleteAll()
     
     // Metrics
-    func addMetric(metric: Metric!) -> Int64
+    func addMetric(_ metric: Metric!) -> Int64
     func getAllMetrics() -> [Metric]!
-    func getMetric(id: String!) -> Metric!
-    func updateMetric(metric: Metric!) -> Bool
-    func deleteMetric(id: String!) -> Int32
-    func getMetricsByInstanceId(instanceId: String!) -> [Metric]!
+    func getMetric(_ id: String!) -> Metric!
+    func updateMetric(_ metric: Metric!) -> Bool
+    func deleteMetric(_ id: String!) -> Int32
+    func getMetricsByInstanceId(_ instanceId: String!) -> [Metric]!
     
     // Metric Data
-    func addMetricDataBatch(_batch: [MetricData]!) -> Bool
-    func getMetricData(metricId: String!, columns: [String]!, from: NSDate!, to: NSDate!, anomalyScore: Float, limit: Int32) -> FMResultSet!
+    func addMetricDataBatch(_ _batch: [MetricData]!) -> Bool
+    func getMetricData(_ metricId: String!, columns: [String]!, from: Date!, to: Date!, anomalyScore: Float, limit: Int32) -> FMResultSet!
     
     // Instance Data
-    func addInstanceDataBatch(batch: [InstanceData]!) -> Bool
-    func getInstanceData( instanceId: String!, columns: [String]!, aggregation: AggregationType!, from: NSDate!, to: NSDate!, anomalyScore: Float, limit: Int32) -> FMResultSet!
-    func updateInstanceData(_instanceData: InstanceData!) -> Bool
+    func addInstanceDataBatch(_ batch: [InstanceData]!) -> Bool
+    func getInstanceData( _ instanceId: String!, columns: [String]!, aggregation: AggregationType!, from: Date!, to: Date!, anomalyScore: Float, limit: Int32) -> FMResultSet!
+    func updateInstanceData(_ _instanceData: InstanceData!) -> Bool
 
     // Instances
     func getAllInstances() -> Set<String>!
-    func deleteInstance(_instance: String!)
-    func deleteInstanceData(_instanceId: String!)
+    func deleteInstance(_ _instance: String!)
+    func deleteInstanceData(_ _instanceId: String!)
    
     // Notifications - NOT USED IN TAURUS SO FAR
-    func addNotification(notificationId: String!, metricId: String!, timestamp: Int64, description: String!) -> Int64
+    func addNotification(_ notificationId: String!, metricId: String!, timestamp: Int64, description: String!) -> Int64
     func getAllNotifications() -> [Notification]!
-    func getNotificationByLocalId(localId: Int32) -> Notification!
+    func getNotificationByLocalId(_ localId: Int32) -> Notification!
     func getUnreadNotificationCount() -> Int32
     func getNotificationCount() -> Int32
-    func markNotificationRead(notificationId: Int32) -> Bool
-    func deleteNotification(localId: Int32) -> Int32
+    func markNotificationRead(_ notificationId: Int32) -> Bool
+    func deleteNotification(_ localId: Int32) -> Int32
     func deleteAllNotifications() -> Int32
     
     // Annotations - NOT USED IN TAURUS SO FAR
-    func addAnnotation(annotation: Annotation!) -> Int64
+    func addAnnotation(_ annotation: Annotation!) -> Int64
     func getAllAnnotations() -> [Annotation]!
-    func getAnnotation(id: String!) -> Annotation!
-    func getAnnotations(server: String!, from: NSDate!, to: NSDate!) -> [Annotation]!
-    func deleteAnnotation(id: String!) -> Int32
-    func deleteAnnotationByInstanceId(instanceId: String!) -> Int32
+    func getAnnotation(_ id: String!) -> Annotation!
+    func getAnnotations(_ server: String!, from: Date!, to: Date!) -> [Annotation]!
+    func deleteAnnotation(_ id: String!) -> Int32
+    func deleteAnnotationByInstanceId(_ instanceId: String!) -> Int32
 }

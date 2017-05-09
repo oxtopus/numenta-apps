@@ -35,7 +35,7 @@ class AnomalyValue  {
         self.metricMask = metricMask
     }
 
-    func equals( o: AnyObject!) -> Bool {
+    func equals( _ o: AnyObject!) -> Bool {
         let that: AnomalyValue! = o as! AnomalyValue
         
         if (that == nil){

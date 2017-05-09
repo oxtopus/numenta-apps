@@ -44,7 +44,7 @@ class SettingsController: UITableViewController {
         updateRefreshLabel()
         self.updateNotificationLabel()
         
-        let enabled = NSUserDefaults.standardUserDefaults().boolForKey("notificationsEnabled")
+        let enabled = UserDefaults.standard.bool(forKey: "notificationsEnabled")
         notificationSwitch?.setOn(  enabled , animated: false )
         
     }
@@ -59,7 +59,7 @@ class SettingsController: UITableViewController {
         - parameter tableView : table being selected
         - parameter didSelectRowIndexPath : path to selected index
     */
-    override func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath){
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath){
         if ( indexPath.section == sectionGeneral && indexPath.item == refreshRateIndex){
             showRefreshPicker()
         }
@@ -69,15 +69,15 @@ class SettingsController: UITableViewController {
         }
         
         if (indexPath.section == sectionDataSouce && indexPath.item == dataSourceIndex){
-            UIApplication.sharedApplication().openURL(NSURL(string: "http://www.xignite.com")!)
+            UIApplication.shared.openURL(URL(string: "http://www.xignite.com")!)
         }
     }
 
     /** Update the version label with version and build number from the main bundle
     */
     func updateVersionLabel(){
-        let appVersionString = NSBundle.mainBundle().objectForInfoDictionaryKey("CFBundleShortVersionString") as! String
-        let appBuildString =  NSBundle.mainBundle().objectForInfoDictionaryKey( "CFBundleVersion") as! String
+        let appVersionString = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
+        let appBuildString =  Bundle.main.object( forInfoDictionaryKey: "CFBundleVersion") as! String
         let versionBuildString = String(format: "%@  (%@)", appVersionString, appBuildString)
         
         self.versionLabel?.text = versionBuildString
@@ -85,17 +85,17 @@ class SettingsController: UITableViewController {
     
     /** update enabled switch
     */
-    @IBAction func notificationSwitch( sender: UIButton ){
-        let defaults = NSUserDefaults.standardUserDefaults()
-        defaults.setBool(notificationSwitch!.on, forKey: "notificationsEnabled")
+    @IBAction func notificationSwitch( _ sender: UIButton ){
+        let defaults = UserDefaults.standard
+        defaults.set(notificationSwitch!.isOn, forKey: "notificationsEnabled")
     }
     
     
     /** update refresh cell text
     */
     func updateRefreshLabel(){
-        let defaults = NSUserDefaults.standardUserDefaults()
-        let frequency =  defaults.integerForKey("refreshFrequency")
+        let defaults = UserDefaults.standard
+        let frequency =  defaults.integer(forKey: "refreshFrequency")
         let actionString = String(format: "%d  minutes", frequency)
         self.refreshLabel?.text = actionString
     }
@@ -103,8 +103,8 @@ class SettingsController: UITableViewController {
     /** update refresh cell text
     */
     func updateNotificationLabel(){
-        let defaults = NSUserDefaults.standardUserDefaults()
-        let item =  defaults.integerForKey("maxNotificationsPerCompany")
+        let defaults = UserDefaults.standard
+        let item =  defaults.integer(forKey: "maxNotificationsPerCompany")
         let actionString =  getActionString (item)
         
         self.notificationLabel?.text = actionString
@@ -113,24 +113,24 @@ class SettingsController: UITableViewController {
     /** show action sheet to select refresh frequency
     */
     func showRefreshPicker(){
-        let optionMenu = UIAlertController(title: nil, message: "Refresh Rate", preferredStyle: .ActionSheet)
+        let optionMenu = UIAlertController(title: nil, message: "Refresh Rate", preferredStyle: .actionSheet)
         let frequency = [1,5,10,15,30]
         
         for item in frequency {
             
             let actionString = String(format: "%d  minutes", item)
-            let action = UIAlertAction(title: actionString, style: .Default, handler: {
+            let action = UIAlertAction(title: actionString, style: .default, handler: {
                 (alert: UIAlertAction!) -> Void in
                 
-                let defaults = NSUserDefaults.standardUserDefaults()
-                defaults.setInteger(item, forKey: "refreshFrequency")
+                let defaults = UserDefaults.standard
+                defaults.set(item, forKey: "refreshFrequency")
                 
           
-                let interval : NSTimeInterval  = Double(item) * 60.0
+                let interval : TimeInterval  = Double(item) * 60.0
                
                 // Request background sync frequency
                 
-                UIApplication.sharedApplication().setMinimumBackgroundFetchInterval(interval)
+                UIApplication.shared.setMinimumBackgroundFetchInterval(interval)
                 self.updateRefreshLabel()
             })
             
@@ -138,7 +138,7 @@ class SettingsController: UITableViewController {
 
         }
     
-        self.presentViewController(optionMenu, animated: true, completion: nil)
+        self.present(optionMenu, animated: true, completion: nil)
     }
     
     
@@ -146,7 +146,7 @@ class SettingsController: UITableViewController {
         - parameter value: hourly limit
         - returns: formatted string
     */
-    func getActionString ( value : Int )->String{
+    func getActionString ( _ value : Int )->String{
         var actionString = ""
         if (value == 0){
             actionString = "No limit"
@@ -160,16 +160,16 @@ class SettingsController: UITableViewController {
     
     /** show action sheet to select notification frequency    */
     func showNotificationPicker(){
-        let optionMenu = UIAlertController(title: nil, message: "MaxNotifcationsPerCompany", preferredStyle: .ActionSheet)
+        let optionMenu = UIAlertController(title: nil, message: "MaxNotifcationsPerCompany", preferredStyle: .actionSheet)
         let frequency = [0,1,2,8,24]
         
         for item in frequency {
             let actionString =  getActionString (item)
-            let action = UIAlertAction(title: actionString, style: .Default, handler: {
+            let action = UIAlertAction(title: actionString, style: .default, handler: {
                 (alert: UIAlertAction!) -> Void in
                 
-                let defaults = NSUserDefaults.standardUserDefaults()
-                defaults.setInteger(item, forKey: "maxNotificationsPerCompany")
+                let defaults = UserDefaults.standard
+                defaults.set(item, forKey: "maxNotificationsPerCompany")
                 
                 self.updateNotificationLabel()
             })
@@ -177,14 +177,14 @@ class SettingsController: UITableViewController {
             optionMenu.addAction(action)
         }
         
-        self.presentViewController(optionMenu, animated: true, completion: nil)
+        self.present(optionMenu, animated: true, completion: nil)
     }
     
-    override func viewWillAppear(animated: Bool) {
+    override func viewWillAppear(_ animated: Bool) {
         // Google Analytics
         let tracker = GAI.sharedInstance().defaultTracker
-        tracker.set(kGAIScreenName, value: "com.numenta.taurus.preference.SettingsActivity")
+        tracker?.set(kGAIScreenName, value: "com.numenta.taurus.preference.SettingsActivity")
         let builder = GAIDictionaryBuilder.createScreenView()
-        tracker.send(builder.build() as [NSObject : AnyObject])
+        tracker?.send(builder?.build() as! [AnyHashable: Any])
     }
 }

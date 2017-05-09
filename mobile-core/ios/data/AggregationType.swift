@@ -43,7 +43,7 @@ class AggregationType{
     * @param interval The interval value in milliseconds
     * @return The {@link AggregationType} that best matches the interval.
     */
-    func AggregationTypefromInterval(interval:Int64)->AggregationType {
+    func AggregationTypefromInterval(_ interval:Int64)->AggregationType {
         
         if (interval <= AggregationType.Hour.milliseconds()) {
                 return AggregationType.Hour

@@ -25,7 +25,7 @@ import Foundation
 
 class AnomalyChartView: UIView {
     var label: String = ""
-    var axisLabels = []
+    var axisLabels = [String]()
     
     var data : [(Int64,Double)] = []
     var startDate : UInt64 = 0
@@ -62,7 +62,7 @@ class AnomalyChartView: UIView {
     /** draw view
         parameter rect: rectangle to draw in
     */
-    override func drawRect(rect: CGRect) {
+    override func draw(_ rect: CGRect) {
         self.contentArea = rect
         
         drawValues( rect)
@@ -71,14 +71,14 @@ class AnomalyChartView: UIView {
     }
    
     /** current not drawing labels*/
-    func drawLabels(rect: CGRect){
+    func drawLabels(_ rect: CGRect){
     }
     
     /** get level for the value
         - parameter value : value to get level of
         - returns: level
     */
-    func getLevel(value :Double)->Int{
+    func getLevel(_ value :Double)->Int{
         if (value.isNaN) {
             return 0
         }
@@ -90,12 +90,12 @@ class AnomalyChartView: UIView {
     /** Draw values for level
         this could be optimized a bit by moving some of the init code out
     */
-    func drawValues( rect: CGRect){
+    func drawValues( _ rect: CGRect){
         let context = UIGraphicsGetCurrentContext()!
         
-        CGContextSaveGState( context)
+        context.saveGState()
 
-        let emptyColor = UIColor.blackColor()
+        let emptyColor = UIColor.black
         
         
         var right =  Double(rect.width) -  leftMargin
@@ -109,7 +109,7 @@ class AnomalyChartView: UIView {
         bar.origin.y = rect.height
         
         // Draw the data from right to left
-        for value in data.lazy.reverse(){
+        for value in data.lazy.reversed(){
             if (right < barWidth){
                 break
             }
@@ -119,13 +119,13 @@ class AnomalyChartView: UIView {
                 // fixme
             }
          else if ( value.1.isNaN){
-                CGContextSetFillColorWithColor(context, emptyColor.CGColor)
+                context.setFillColor(emptyColor.cgColor)
             
                 bar.origin.x = CGFloat(left)
                 bar.size.height  = CGFloat(emptyBarHeight)
-                CGContextAddRect(context, bar)
+                context.addRect(bar)
             
-                CGContextFillPath(context)
+                context.fillPath()
            
         }else{
                               var color : CGColor
@@ -144,27 +144,27 @@ class AnomalyChartView: UIView {
                     bar.size.height += 26.0
                 }
                 
-                CGContextSetFillColorWithColor(context, color)
+                context.setFillColor(color)
                 
                 bar.origin.x = CGFloat(left)+1.0
                
-                CGContextAddRect(context, bar)
+                context.addRect(bar)
                 
-                CGContextFillPath(context)
+                context.fillPath()
                 
         }
             left -= barWidth
             right -= barWidth
         }
-        CGContextRestoreGState( context)
+        context.restoreGState()
     }
     
     // Don't use currently
-    func drawFlags( rect: CGRect ){
+    func drawFlags( _ rect: CGRect ){
           }
     
     // Currently not used
-    func  convertToPixel( value :Double)->Double {
+    func  convertToPixel( _ value :Double)->Double {
         if value.isNaN{
             // Put invalid numbers outside the content area
             
@@ -183,7 +183,7 @@ class AnomalyChartView: UIView {
     /** set data
         -parameter data: data to render
     */
-    func setData(data:[(Int64,Double)]?){
+    func setData(_ data:[(Int64,Double)]?){
         if (data != nil){
             self.data = data!
             refreshScale()

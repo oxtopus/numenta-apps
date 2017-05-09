@@ -24,7 +24,7 @@ import Foundation
 
 /** Holds a set of Metrics
 */
-struct MetricType : OptionSetType {
+struct MetricType : OptionSet {
     var rawValue: Int
     
     static let None         = MetricType(rawValue: 0)
@@ -38,7 +38,7 @@ struct MetricType : OptionSetType {
         - parameter key:
         - returns : metricType
     */
-    static func enumForKey(key:String)->MetricType{
+    static func enumForKey(_ key:String)->MetricType{
         switch (key){
             case "StockPrice":
                 return MetricType.StockPrice

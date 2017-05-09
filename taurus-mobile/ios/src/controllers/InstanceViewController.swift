@@ -34,7 +34,7 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
     var favoriteSegmentControl: UISegmentedControl?
     var searchControllerButton: UIBarButtonItem?
     var logo: UIBarButtonItem?
-    let dayTimePeriodFormatter = NSDateFormatter()
+    let dayTimePeriodFormatter = DateFormatter()
     var hide = false
 
     var _aggregation: AggregationType = TaurusApplication.getAggregation()
@@ -56,43 +56,43 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
         self.definesPresentationContext = true
 
         // Add spacer to search
-        searchSpacerButton = UIBarButtonItem(barButtonSystemItem: .FixedSpace, target: self, action: nil)
+        searchSpacerButton = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: self, action: nil)
         searchSpacerButton?.width = -20
 
         // Add buttons to navigation bar
-        searchButton = UIBarButtonItem(barButtonSystemItem: .Search, target: self, action: "showSearch")
-        searchButton!.tintColor = UIColor.whiteColor()
+        searchButton = UIBarButtonItem(barButtonSystemItem: .search, target: self, action: #selector(InstanceViewController.showSearch))
+        searchButton!.tintColor = UIColor.white
         searchButton!.imageInsets = UIEdgeInsetsMake(0, 0, 0, -40)
 
         let items = ["All", "Favorites"]
         favoriteSegmentControl = UISegmentedControl(items: items)
         favoriteSegmentControl!.selectedSegmentIndex = 0
-        favoriteSegmentControl!.tintColor = UIColor.whiteColor()
-        favoriteSegmentControl!.addTarget(self, action: "favoriteSwitch:", forControlEvents: UIControlEvents.ValueChanged)
-        favoriteSegmentControl!.setWidth(50.0, forSegmentAtIndex: 0)
-        favoriteSegmentControl!.setWidth(65.0, forSegmentAtIndex: 1)
+        favoriteSegmentControl!.tintColor = UIColor.white
+        favoriteSegmentControl!.addTarget(self, action: #selector(InstanceViewController.favoriteSwitch(_:)), for: UIControlEvents.valueChanged)
+        favoriteSegmentControl!.setWidth(50.0, forSegmentAt: 0)
+        favoriteSegmentControl!.setWidth(65.0, forSegmentAt: 1)
         let container = UIView()
         container.addSubview(favoriteSegmentControl!)
-        container.backgroundColor = UIColor.blueColor()
+        container.backgroundColor = UIColor.blue
 
         favoriteSegment = UIBarButtonItem(customView:favoriteSegmentControl!)
         searchControllerButton = UIBarButtonItem(customView: self.searchController!.searchBar)
-        searchController?.searchBar.hidden = false
+        searchController?.searchBar.isHidden = false
 
         let menuIcon = UIImage(named: "menu")
-        let b2 = UIBarButtonItem (image: menuIcon, style: UIBarButtonItemStyle.Plain, target: self, action: "showMenu:")
+        let b2 = UIBarButtonItem (image: menuIcon, style: UIBarButtonItemStyle.plain, target: self, action: #selector(InstanceViewController.showMenu(_:)))
         self.menuButton = b2
 
-        b2.tintColor = UIColor.whiteColor()
+        b2.tintColor = UIColor.white
 
         self.navigationItem.rightBarButtonItems = [menuButton!, searchButton!]
 
         // Show header icon
 
-        let icon = UIImage(named: "ic_grok_logo")!.imageWithRenderingMode(UIImageRenderingMode.AlwaysOriginal)
+        let icon = UIImage(named: "ic_grok_logo")!.withRenderingMode(UIImageRenderingMode.alwaysOriginal)
 
         // icon?.renderingMode = UIImageRenderingModeAlwaysOriginal
-        logo = UIBarButtonItem (image: icon, style: UIBarButtonItemStyle.Plain, target: nil, action: nil)
+        logo = UIBarButtonItem (image: icon, style: UIBarButtonItemStyle.plain, target: nil, action: nil)
         logo!.imageInsets = UIEdgeInsetsMake(0, 0, 0, -20)
 
         // Shift it to the left to free up some space
@@ -102,19 +102,19 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
         // Hook up swipe gesture
 
         let panRec = UIPanGestureRecognizer()
-        panRec.addTarget(self, action: "draggedView:")
+        panRec.addTarget(self, action: #selector(InstanceViewController.draggedView(_:)))
         timeSlider?.addGestureRecognizer(panRec)
 
         // on iOS 8+ need to make sure table background is clear
 
-        instanceTable.backgroundColor = UIColor.clearColor()
+        instanceTable.backgroundColor = UIColor.clear
 
-        NSNotificationCenter.defaultCenter().addObserverForName(TaurusDatabase.INSTANCEDATALOADED, object: nil, queue: nil, usingBlock: {
+        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: TaurusDatabase.INSTANCEDATALOADED), object: nil, queue: nil, using: {
             [unowned self] note in
             self.syncWithDB()
             })
 
-        NSNotificationCenter.defaultCenter().addObserverForName(TaurusDataSyncService.INSTANCE_DATA_CHANGED_EVENT, object: nil, queue: nil, usingBlock: {
+        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: TaurusDataSyncService.INSTANCE_DATA_CHANGED_EVENT), object: nil, queue: nil, using: {
             [unowned self] note in
             self.syncWithDB()
             })
@@ -131,33 +131,33 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
 
         dayTimePeriodFormatter.dateFormat = "EEEE, M/d"
         dateLabel!.layer.masksToBounds = true
-        self.dateLabel!.hidden  = true
+        self.dateLabel!.isHidden  = true
 
         progressLabel!.layer.masksToBounds = true
 
-        let firstRun = NSUserDefaults.standardUserDefaults().boolForKey("firstRun")
+        let firstRun = UserDefaults.standard.bool(forKey: "firstRun")
         if firstRun != true {
-            self.navigationController!.performSegueWithIdentifier ("startTutorial", sender: nil)
-            NSUserDefaults.standardUserDefaults().setBool(true, forKey: "firstRun")
+            self.navigationController!.performSegue (withIdentifier: "startTutorial", sender: nil)
+            UserDefaults.standard.set(true, forKey: "firstRun")
         }
 
         // Show sync progress
-        NSNotificationCenter.defaultCenter().addObserverForName(DataSyncService.PROGRESS_STATE_EVENT, object: nil, queue: nil, usingBlock: {
+        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: DataSyncService.PROGRESS_STATE_EVENT), object: nil, queue: nil, using: {
             [unowned self] note in
-            let date = note.object as? NSDate
+            let date = note.object as? Date
 
-            dispatch_async(dispatch_get_main_queue()) {
+            DispatchQueue.main.async {
                 if date == nil || self.tableData.count > 0 {
-                    self.progressLabel!.hidden  = true
+                    self.progressLabel!.isHidden  = true
                     return
                 }
-                self.progressLabel!.text = "Syncing\r\n"+self.dayTimePeriodFormatter.stringFromDate(date!)
-                self.progressLabel!.hidden  = false
+                self.progressLabel!.text = "Syncing\r\n"+self.dayTimePeriodFormatter.string(from: date!)
+                self.progressLabel!.isHidden  = false
             }
             })
     }
 
-    func showMenu( sender: UIButton) {
+    func showMenu( _ sender: UIButton) {
         CustomMenuController.showMenu(self)
     }
 
@@ -170,7 +170,7 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
     }
 
     /* hide search bar*/
-    func searchBarCancelButtonClicked(_searchBar: UISearchBar) {
+    func searchBarCancelButtonClicked(_ _searchBar: UISearchBar) {
         self.navigationItem.setRightBarButtonItems([menuButton!, searchButton!], animated: true)
         self.navigationItem.setLeftBarButtonItems([logo!, favoriteSegment!], animated: true)
 
@@ -182,13 +182,13 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
         // Dispose of any resources that can be recreated.
     }
 
-    @IBAction func favoriteSwitch(segment: UISegmentedControl) {
+    @IBAction func favoriteSwitch(_ segment: UISegmentedControl) {
         if segment.selectedSegmentIndex == 0 {
             self.tableData = self.allData
         } else {
             var   listData = [Int:[InstanceAnomalyChartData]]()
             let sections: Int = self.allData.count
-            for var i = 0; i < sections; i++ {
+            for i in 0 ..< sections {
                 listData[i] = [InstanceAnomalyChartData]()
                 let sectionData = self.allData[i]!
                 for val: InstanceAnomalyChartData in sectionData {
@@ -213,17 +213,17 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
      Handle the swipe gesture
      - parameter sender:
      */
-    func draggedView(sender: UIPanGestureRecognizer) {
+    func draggedView(_ sender: UIPanGestureRecognizer) {
         //  self.view.bringSubviewToFront(sender.view)
-        let translation = sender.translationInView(self.view)
+        let translation = sender.translation(in: self.view)
         //  print (translation)
         if abs(translation.y) > abs(translation.x) {
             return
         }
         let distance = getDistance( Double( translation.x) * -1.0 )
-        sender.setTranslation(CGPoint.zero, inView: self.view)
+        sender.setTranslation(CGPoint.zero, in: self.view)
 
-        let newTime: NSDate? =  timeSlider?.endDate.dateByAddingTimeInterval(distance)
+        let newTime: Date? =  timeSlider?.endDate.addingTimeInterval(distance) as! Date
         //   print ((timeSlider?.endDate,newTime))
 
         var flooredDate = DataUtils.floorTo5Mins (newTime!)
@@ -233,11 +233,11 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
         let minDate = maxDate - (Int64(TaurusApplication.getNumberOfDaysToSync() - 1)) * DataUtils.MILLIS_PER_DAY
         // Check max date and no date
         if endDateInd > maxDate {
-            flooredDate =  NSDate(timeIntervalSince1970: Double(maxDate)/1000.0 )
+            flooredDate =  Date(timeIntervalSince1970: Double(maxDate)/1000.0 )
         }
         // Check min date
         if endDateInd < minDate {
-            flooredDate =  NSDate(timeIntervalSince1970: Double(minDate)/1000.0 )
+            flooredDate =  Date(timeIntervalSince1970: Double(minDate)/1000.0 )
 
         }
 
@@ -246,8 +246,8 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
         timeSlider?.endDate =  flooredDate
         timeSlider?.setNeedsDisplay()
 
-        self.dateLabel!.text = self.dayTimePeriodFormatter.stringFromDate(flooredDate)
-        self.dateLabel!.hidden  = false
+        self.dateLabel!.text = self.dayTimePeriodFormatter.string(from: flooredDate)
+        self.dateLabel!.isHidden  = false
         let visibleCells = self.instanceTable.visibleCells
         for cell in visibleCells {
             let instanceCell = cell as! InstanceCell
@@ -257,14 +257,14 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
             instanceCell.setNeedsDisplay()
         }
         self.hide  = false
-        if sender.state == .Ended {
+        if sender.state == .ended {
             self.hide = true
             // Pan has ended. Hide label in a couple of seconds
-            let dispatchTime: dispatch_time_t = dispatch_time(DISPATCH_TIME_NOW, Int64(3 * Double(NSEC_PER_SEC)))
+            let dispatchTime: DispatchTime = DispatchTime.now() + Double(Int64(3 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
 
-            dispatch_after(dispatchTime, dispatch_get_main_queue(), {
+            DispatchQueue.main.asyncAfter(deadline: dispatchTime, execute: {
                 if self.hide {
-                    self.dateLabel!.hidden  = true
+                    self.dateLabel!.isHidden  = true
                 }
             })
         }
@@ -273,7 +273,7 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
     /* get the amount of time to shift
      -parameter distance: length of swipe
      */
-    func getDistance(distance: Double) -> Double {
+    func getDistance(_ distance: Double) -> Double {
         let width =  self.view.frame.size.width
         let pixels = Double(Double(width) / (Double)(TaurusApplication.getTotalBarsOnChart()))
         let scrolledBars = Double(Int64 (distance / pixels))
@@ -288,12 +288,12 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
      - parameter tableView: table
      - returns: number of sections
      */
-    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
+    func numberOfSections(in tableView: UITableView) -> Int {
         var numSections = 0
 
         for item in tableData {
             if item.1.count > 0 {
-                numSections++
+                numSections += 1
             }
         }
 
@@ -303,7 +303,7 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
 
 
 
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
 
         let data = tableData[ getSectionIndex(section)]
         if data != nil {
@@ -312,10 +312,10 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
         return 0
     }
 
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell: InstanceCell? = self.instanceTable.dequeueReusableCellWithIdentifier("InstanceCell") as! InstanceCell?
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell: InstanceCell? = self.instanceTable.dequeueReusableCell(withIdentifier: "InstanceCell") as! InstanceCell?
 
-        cell?.backgroundColor = UIColor.clearColor()
+        cell?.backgroundColor = UIColor.clear
         let data = tableData[ getSectionIndex(indexPath.section)]
 
         if data != nil {
@@ -349,10 +349,10 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
     - parameter section: table section
     - returns: data section
     */
-    func getSectionIndex (section: Int) -> Int {
+    func getSectionIndex (_ section: Int) -> Int {
         var sections: Int = 0
         var index = 0
-        for index = 0; index < tableData.count; index++ {
+        for index in 0...tableData.count {
             let data = tableData[index]!
             if data.count == 0 {
                 continue
@@ -360,19 +360,19 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
             if sections == section {
                 break
             }
-            sections++
+            sections += 1
         }
         return index
     }
 
 
-    func tableView(tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         let tableViewWidth = self.instanceTable.bounds.width
 
-        let headerView = UIView(frame: CGRectMake(0, 0, tableViewWidth, self.instanceTable.sectionHeaderHeight))
-        let label = UILabel(frame: CGRectMake(10, 0, tableViewWidth - 20, self.instanceTable.sectionHeaderHeight))
+        let headerView = UIView(frame: CGRect(x: 0, y: 0, width: tableViewWidth, height: self.instanceTable.sectionHeaderHeight))
+        let label = UILabel(frame: CGRect(x: 10, y: 0, width: tableViewWidth - 20, height: self.instanceTable.sectionHeaderHeight))
         label.backgroundColor = UIColor.init(red: 0.7, green: 0.7, blue: 0.7, alpha: 1.0)
-        label.font  = UIFont.boldSystemFontOfSize(14.0)
+        label.font  = UIFont.boldSystemFont(ofSize: 14.0)
         headerView.addSubview(label)
 
         let sectionIndex = getSectionIndex( section)
@@ -401,14 +401,14 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
     }*/
 
 
-    func loadChartData(cell: InstanceCell, data: InstanceAnomalyChartData) {
+    func loadChartData(_ cell: InstanceCell, data: InstanceAnomalyChartData) {
 
-        let priority = DISPATCH_QUEUE_PRIORITY_DEFAULT
-        dispatch_async(dispatch_get_global_queue(priority, 0)) {
+        let priority = DispatchQueue.GlobalQueuePriority.default
+        DispatchQueue.global(priority: priority).async {
             data.setEndDate( self.timeSlider!.endDate)
             data.load()
             if data.hasData() {
-                dispatch_async(dispatch_get_main_queue()) {
+                DispatchQueue.main.async {
                     cell.chart.setData ( data.getData())
                 }
             }
@@ -417,18 +417,18 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
 
 
     func syncWithDB() {
-        dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0)) {
+        DispatchQueue.global(qos: DispatchQoS.QoSClass.userInitiated).async {
             if self.synchronizing {
                 return
             }
             self.synchronizing = true
             let instanceSet = TaurusApplication.getDatabase().getAllInstances()
             var   listData = [Int:[InstanceAnomalyChartData]]()
-            for var i = 0; i<4; i++ {
+            for i in 0 ..< 4 {
                 listData[i] = [InstanceAnomalyChartData]()
             }
 
-            for  instance in instanceSet {
+            for  instance in instanceSet! {
                 let instanceChartData = InstanceAnomalyChartData(instanceId: instance, aggregation: self._aggregation)
                 instanceChartData.setEndDate( DataUtils.dateFromTimestamp(TaurusApplication.getDatabase().getLastTimestamp() ))
                 instanceChartData.load()
@@ -451,9 +451,9 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
 
             }
 
-            for var i = 0; i<4; i++ {
+            for i in 0 ..< 4 {
                 var data =  listData[i]
-                data!.sortInPlace {
+                data!.sort {
                     if $0.getRank() > $1.getRank() {
                         return true
                     }
@@ -465,7 +465,7 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
                     let result = $0.getName().compare ($1.getName())
 
 
-                    if result == NSComparisonResult.OrderedAscending {
+                    if result == ComparisonResult.orderedAscending {
                         return true
                     }
                     return false
@@ -477,7 +477,7 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
             self.synchronizing = false
 
             // Update UI with new data
-            dispatch_async(dispatch_get_main_queue()) {
+            DispatchQueue.main.async {
                 self.allData = listData
                 //   self.currentData = listData
                 self.tableData = self.allData
@@ -489,7 +489,7 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
     }
 
 
-    func updateSearchResultsForSearchController(searchController: UISearchController) {
+    func updateSearchResults(for searchController: UISearchController) {
         let text = searchController.searchBar.text
         if text!.isEmpty {
             self.tableData = self.allData
@@ -499,7 +499,7 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
 
         let searchPredicate = NSPredicate(format: "SELF CONTAINS[c] %@", text!)
         var   listData = [Int:[InstanceAnomalyChartData]]()
-        for var i = 0; i<4; i++ {
+        for i in 0 ..< 4 {
             listData[i] = [InstanceAnomalyChartData]()
 
             if i >= self.allData.count {
@@ -508,8 +508,8 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
 
             let sectionData = self.allData[i]!
             for val: InstanceAnomalyChartData in  sectionData {
-                if searchPredicate.evaluateWithObject ( val.ticker ) ||
-                    searchPredicate.evaluateWithObject ( val.getName()) {
+                if searchPredicate.evaluate ( with: val.ticker ) ||
+                    searchPredicate.evaluate ( with: val.getName()) {
                         listData[i]?.append(val)
                 }
             }
@@ -519,15 +519,15 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
         self.instanceTable.reloadData()
     }
 
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "showInstanceDetail" {
             if let indexPath = self.instanceTable.indexPathForSelectedRow {
-                let controller = segue.destinationViewController as! InstanceDetailsViewController
+                let controller = segue.destination as! InstanceDetailsViewController
                 let data = tableData[ getSectionIndex(indexPath.section)]
                 if data != nil {
                     controller.chartData = data![ indexPath.item]
                 }
-                self.instanceTable.deselectRowAtIndexPath (indexPath, animated: false)
+                self.instanceTable.deselectRow (at: indexPath, animated: false)
             }
         }
     }
@@ -535,11 +535,11 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
     /**
      * Detect long press on table row and present the add/remove favorite dialog
      */
-    @IBAction func handleLongPress(sender: AnyObject ) {
-        if sender.state == UIGestureRecognizerState.Began {
+    @IBAction func handleLongPress(_ sender: AnyObject ) {
+        if sender.state == UIGestureRecognizerState.began {
             let longPress = sender as? UILongPressGestureRecognizer
-            let location = longPress!.locationInView (self.instanceTable)
-            let indexPath = self.instanceTable.indexPathForRowAtPoint(location)
+            let location = longPress!.location (in: self.instanceTable)
+            let indexPath = self.instanceTable.indexPathForRow(at: location)
             if indexPath == nil {
                 return
             }
@@ -556,13 +556,13 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
                 msg = "Remove as favorite?"
             }
 
-            let alertView = UIAlertController(title: "", message: msg, preferredStyle: .Alert)
-            alertView.addAction(UIAlertAction(title: "Yes", style: .Default, handler: { (alertAction) -> Void in
+            let alertView = UIAlertController(title: "", message: msg, preferredStyle: .alert)
+            alertView.addAction(UIAlertAction(title: "Yes", style: .default, handler: { (alertAction) -> Void in
 
                 // Google Analytics
                 let tracker = GAI.sharedInstance().defaultTracker
-                let builder = GAIDictionaryBuilder.createEventWithCategory("Favorites", action: favorite ? "Remove" : "Add", label: chartData.ticker, value: 1)
-                tracker.send(builder.build() as [NSObject : AnyObject])
+                let builder = GAIDictionaryBuilder.createEvent(withCategory: "Favorites", action: favorite ? "Remove" : "Add", label: chartData.ticker, value: 1)
+                tracker?.send(builder?.build() as! [AnyHashable: Any])
 
                 if favorite {
                     TaurusApplication.removeInstanceToFavorites(chartData.getId())
@@ -570,15 +570,15 @@ class InstanceViewController: UIViewController, UITableViewDataSource, UITableVi
                     TaurusApplication.addInstanceToFavorites(chartData.getId())
                 }
             }))
-            alertView.addAction(UIAlertAction(title: "No", style: .Cancel, handler: nil))
-            presentViewController(alertView, animated: true, completion: nil)
+            alertView.addAction(UIAlertAction(title: "No", style: .cancel, handler: nil))
+            present(alertView, animated: true, completion: nil)
         }
     }
-    override func viewWillAppear(animated: Bool) {
+    override func viewWillAppear(_ animated: Bool) {
         // Google Analytics
         let tracker = GAI.sharedInstance().defaultTracker
-        tracker.set(kGAIScreenName, value: "com.numenta.taurus.instance.InstanceListActivity")
+        tracker?.set(kGAIScreenName, value: "com.numenta.taurus.instance.InstanceListActivity")
         let builder = GAIDictionaryBuilder.createScreenView()
-        tracker.send(builder.build() as [NSObject : AnyObject])
+        tracker?.send(builder?.build() as! [AnyHashable: Any])
     }
 }

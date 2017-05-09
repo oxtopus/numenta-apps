@@ -19,10 +19,9 @@
 
 import Foundation
 
-public class TaurusClient : GrokClient {
+open class TaurusClient : GrokClient {
     
-    static let TABLE_SUFFIX : String  = ".production" // Move off to a config file
-
+    static let TABLE_SUFFIX : String  = AppConfig.currentStage 
     
     static let  METRIC_TABLE : String = "taurus.metric" + TABLE_SUFFIX
     static let  METRIC_DATA_TABLE : String = "taurus.metric_data" + TABLE_SUFFIX
@@ -36,15 +35,15 @@ public class TaurusClient : GrokClient {
         - parameter region: AWRS region
     */
     init( provider : AWSCredentialsProvider, region: AWSRegionType){
-        let configuration = AWSServiceConfiguration(region: AWSRegionType.USWest2, credentialsProvider: provider)
-        AWSServiceManager.defaultServiceManager().defaultServiceConfiguration = configuration
-        awsClient = AWSDynamoDB.defaultDynamoDB()
+        let configuration = AWSServiceConfiguration(region: AWSRegionType.usWest2, credentialsProvider: provider)
+        AWSServiceManager.default().defaultServiceConfiguration = configuration
+        awsClient = AWSDynamoDB.default()
     }
     
     /** Check if data connection is available
         returns: true if available.
     */
-    public func isOnline() -> Bool{
+    open func isOnline() -> Bool{
         // FIXME
         // Check for network connection
         return true
@@ -53,103 +52,113 @@ public class TaurusClient : GrokClient {
     
     /** No login for taurus
     */
-    public func login(){
+    open func login(){
         // Do nothing
     }
     
     
     /** no server url for taurus
     */
-    public func getServerUrl() -> String!{
+    open func getServerUrl() -> String!{
         return nil
     }
     
     /** returne name of server
     */
-    public func getServerName() -> String! {
+    open func getServerName() -> String! {
         return "Taurus"
     }
     
-    public func getServerVersion() -> Int{
+    open func getServerVersion() -> Int{
         return 0
     }
     
     /** get list of metrics from server
         - returns: array of metrics
     */
-    public func getMetrics() -> [Metric!]!{
+    open func getMetrics() -> [Metric?]!{
         var metrics = [Metric]()
-        
+        print("getMetrics")
         let  request: AWSDynamoDBScanInput =  AWSDynamoDBScanInput()
         request.tableName = TaurusClient.METRIC_TABLE
         request.attributesToGet = ["uid", "name", "server", "metricType","metricTypeName","symbol" ]
         
         repeat{
-            let task : AWSTask = awsClient.scan( request ).continueWithBlock {
-                (task: AWSTask!) -> AnyObject! in
+            
+            let task = awsClient.scan(request).continue({ (task: AWSTask!) -> Any? in
                 let error = task.error
                 if (error != nil ){
-                    print(error)
+                    print(error!)
                     return nil
                 }
                 let taskResult = task.result
                 //  print (taskResult)
-                let results = taskResult as! AWSDynamoDBScanOutput
+                var results = taskResult as! AWSDynamoDBScanOutput
+                //print("Results: ")
+                //print(results)
                 
-                for item  in results.items{
-                    
-                    let uid = (item["uid"] as! AWSDynamoDBAttributeValue).S
-                    let name = (item["name"] as! AWSDynamoDBAttributeValue).S
-                    let server = (item["server"] as! AWSDynamoDBAttributeValue).S
-                    let metricType =  (item["metricType"] as! AWSDynamoDBAttributeValue).S
-                    let metricTypeName = (item["metricTypeName"] as! AWSDynamoDBAttributeValue).S
-                    let symbol = (item["symbol"] as! AWSDynamoDBAttributeValue).S
                 
-                    var pString =   "{\"metricSpec\":{\"userInfo\": {\"symbol\": \"" + symbol
-                        pString += "\",\"metricType\": \"" + metricType
-                        pString +=  "\",\"metricTypeName\": \"" + metricTypeName + "\"}}}"
+                //print(results.dictionaryValue[0])
+                //print(results.items)
+               
+                for object in results.items{
                     
-                    let dataFromString = pString.dataUsingEncoding(NSUTF8StringEncoding, allowLossyConversion: false)
-                    let json = JSON(data: dataFromString!)
-                    let metric = TaurusApplication.dataFactory.createMetric( uid, name: name, instanceId: server, serverName: server, lastRowId: 0, parameters: json)
+                    if let item = object as? [String:Any] {
+                 
+                        let uid = (item["uid"] as! AWSDynamoDBAttributeValue).s
+                        let name = (item["name"] as! AWSDynamoDBAttributeValue).s
+                        let server = (item["server"] as! AWSDynamoDBAttributeValue).s
+                        let metricType =  (item["metricType"] as! AWSDynamoDBAttributeValue).s
+                        let metricTypeName = (item["metricTypeName"] as! AWSDynamoDBAttributeValue).s
+                        let symbol = (item["symbol"] as! AWSDynamoDBAttributeValue).s
                     
-                    metrics.append(metric)
+                        var pString =   "{\"metricSpec\":{\"userInfo\": {\"symbol\": \"" + symbol!
+                            pString += "\",\"metricType\": \"" + metricType!
+                            pString +=  "\",\"metricTypeName\": \"" + metricTypeName! + "\"}}}"
+                        
+                        let dataFromString = pString.data(using: String.Encoding.utf8, allowLossyConversion: false)
+                        do {
+                            let json = try JSON(data: dataFromString!)
+                            let metric = TaurusApplication.dataFactory.createMetric( uid, name: name, instanceId: server, serverName: server, lastRowId: 0, parameters: json)
+                            print("metric name: " + (metric?.getName())!)
+                            metrics.append(metric!)
+                        } catch {print(error)}
+                    }
                 }
                 
                 request.exclusiveStartKey =  results.lastEvaluatedKey
         
-                return nil
-            }
+                return()
+                } as AWSContinuationBlock)
         
-            task.waitUntilFinished()
+            task?.waitUntilFinished()
         } while  request.exclusiveStartKey != nil
-
         return metrics
     }
     
-    public func getMetricData(modelId: String!, from: NSDate!, to: NSDate!, callback: (MetricData!)->Bool!){
+    open func getMetricData(_ modelId: String!, from: Date!, to: Date!, callback: (MetricData!)->Bool!){
         // do nothing
     }
     
-    public func getNotifications() -> [Notification!]!{
+    open func getNotifications() -> [Notification?]!{
         // Do nothing
         return nil
     }
     
-    public func acknowledgeNotifications(_ids: [String!]!){
+    open func acknowledgeNotifications(_ _ids: [String?]!){
         // do nothing, taurus notifications are managed by the client
     }
     
-    public func getAnnotations(from: NSDate!, to: NSDate!) -> [Annotation!]!{
+    open func getAnnotations(_ from: Date!, to: Date!) -> [Annotation?]!{
        // Do Nothing
         return nil
     }
     
-    public func deleteAnnotation(_annotation: Annotation!){
+    open func deleteAnnotation(_ _annotation: Annotation!){
         // Do nothing
     }
     
-    public func addAnnotation(timestamp: NSDate!, server: String!, message: String!, user: String!) -> Annotation!{
+    open func addAnnotation(_ timestamp: Date!, server: String!, message: String!, user: String!) -> Annotation!{
         // Do nothing
         return nil
     }
@@ -164,61 +173,61 @@ public class TaurusClient : GrokClient {
         - paramter to: end time
         - parameter callback : will be called once for each tweet
     */
-    func getTweets ( metricName: String, from: NSDate, to : NSDate, callback : (Tweet?)->Void? ){
+    func getTweets ( _ metricName: String, from: Date, to : Date, callback : @escaping (Tweet?)->Void? ){
         var keyConditions : [String: AWSDynamoDBCondition] = [: ]
-        let dateFormatter : NSDateFormatter  = NSDateFormatter()
+        let dateFormatter : DateFormatter  = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
-        dateFormatter.timeZone = NSTimeZone(forSecondsFromGMT: 0)
+        dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
 
         // Set up the UID condition
         let metricCondition = AWSDynamoDBCondition()
-        metricCondition.comparisonOperator = AWSDynamoDBComparisonOperator.EQ
+        metricCondition?.comparisonOperator = AWSDynamoDBComparisonOperator.EQ
         
         let metricAttr = AWSDynamoDBAttributeValue()
-        metricAttr.S = metricName
+        metricAttr?.s = metricName
         
-        metricCondition.attributeValueList = [metricAttr]
+        metricCondition?.attributeValueList = [metricAttr]
         keyConditions["metric_name"] = metricCondition
         
         // Set up the date Condition
         let timestampCondition = AWSDynamoDBCondition()
-        timestampCondition.comparisonOperator = AWSDynamoDBComparisonOperator.Between
+        timestampCondition?.comparisonOperator = AWSDynamoDBComparisonOperator.between
         
         let fromAttr = AWSDynamoDBAttributeValue()
-        fromAttr.S = dateFormatter.stringFromDate(from)
+        fromAttr?.s = dateFormatter.string(from: from)
         
         let toAttr = AWSDynamoDBAttributeValue()
-        toAttr.S = dateFormatter.stringFromDate(to)
+        toAttr?.s = dateFormatter.string(from: to)
         
         
-        if ( from.compare(to) == NSComparisonResult.OrderedAscending) {
-            timestampCondition.attributeValueList = [fromAttr, toAttr]
+        if ( from.compare(to) == ComparisonResult.orderedAscending) {
+            timestampCondition?.attributeValueList = [fromAttr, toAttr]
         }else{
             
             // This should never happen
-            timestampCondition.attributeValueList = [toAttr, fromAttr]
+            timestampCondition?.attributeValueList = [toAttr, fromAttr]
         }
         
         keyConditions["agg_ts"] = timestampCondition
         
         
         let query = AWSDynamoDBQueryInput()
-        query.tableName = TaurusClient.TWEETS_TABLE
+        query?.tableName = TaurusClient.TWEETS_TABLE
         
 
-        query.attributesToGet=["tweet_uid","userid", "text", "username",
+        query?.attributesToGet=["tweet_uid","userid", "text", "username",
             "agg_ts", "created_at", "retweet_count"]
-        query.keyConditions = keyConditions
-        query.scanIndexForward = false
-        query.indexName = "taurus.metric_data-metric_name_index"
+        query?.keyConditions = keyConditions
+        query?.scanIndexForward = false
+        query?.indexName = "taurus.metric_data-metric_name_index"
         
         var done = false
+        print("getTweets")
         repeat {
-            let task =  awsClient.query( query).continueWithBlock {
-                (task: AWSTask!) -> AnyObject! in
+            let task =  awsClient.query( query).continue({ (task: AWSTask!) -> Any? in
                 let error = task.error
                 if (error != nil ){
-                    print(error)
+                    print(error!)
                     return nil
                 }
                 let taskResult = task.result
@@ -226,36 +235,39 @@ public class TaurusClient : GrokClient {
                 
                 let myResults  = results.items
             
-                for item  in myResults{
-                    //    print( item )
-                    let tweetId = (item["tweet_uid"] as! AWSDynamoDBAttributeValue).S
+                for object in myResults!{
+         
+                    if let item = object as? [String:Any] {
+                        //    print( item )
+                        let tweetId = (item["tweet_uid"] as! AWSDynamoDBAttributeValue).s
 
-                    let userId = (item["userid"] as! AWSDynamoDBAttributeValue).S
-                    let text = (item["text"] as! AWSDynamoDBAttributeValue).S
-                    let userName = (item["username"] as! AWSDynamoDBAttributeValue).S
-                    let aggregated = DataUtils.parseHTMDate((item["agg_ts"]as! AWSDynamoDBAttributeValue).S)
-                    let created = DataUtils.parseHTMDate((item["created_at"]as! AWSDynamoDBAttributeValue).S)
-                    
-                    let retweet = item["retweet_count"] as? AWSDynamoDBAttributeValue
-                    var retweetCount : Int32 = 0
-                    
-                    if (retweet != nil && retweet!.N != nil){
-                        retweetCount = Int32 (retweet!.N)!
-                    }
-        
-                    let tweet = TaurusApplication.dataFactory.createTweet( tweetId!, aggregated: aggregated!, created: created!, userId: userId!, userName: userName!, text: text!, retweetCount: retweetCount)
-                    
-                    
-                    callback (tweet)
-                    
+                        let userId = (item["userid"] as! AWSDynamoDBAttributeValue).s
+                        let text = (item["text"] as! AWSDynamoDBAttributeValue).s
+                        let userName = (item["username"] as! AWSDynamoDBAttributeValue).s
+                        let aggregated = DataUtils.parseHTMDate((item["agg_ts"]as! AWSDynamoDBAttributeValue).s)
+                        let created = DataUtils.parseHTMDate((item["created_at"]as! AWSDynamoDBAttributeValue).s)
+                        
+                        let retweet = item["retweet_count"] as? AWSDynamoDBAttributeValue
+                        var retweetCount : Int32 = 0
+                        
+                        if (retweet != nil && retweet!.n != nil){
+                            retweetCount = Int32 (retweet!.n)!
+                        }
+            
+                        let tweet = TaurusApplication.dataFactory.createTweet( tweetId!, aggregated: aggregated!, created: created!, userId: userId!, userName: userName!, text: text!, retweetCount: retweetCount)
+                        
+                        
+                        callback (tweet)
+                       } 
                 }
-                query.exclusiveStartKey =  results.lastEvaluatedKey
+                query?.exclusiveStartKey =  results.lastEvaluatedKey
                 if (results.lastEvaluatedKey == nil){
                     done = true
+                    
                 }
-                return nil
-            }
-            task.waitUntilFinished()
+                return()
+                } as AWSContinuationBlock)
+            task?.waitUntilFinished()
         } while !done
     }
     
@@ -266,60 +278,60 @@ public class TaurusClient : GrokClient {
         - parameter ascending: sort order
         - parameter  callback: will be called for each metric value
     */
-    func getMetricsValues (modelId: String, from:NSDate, to: NSDate, ascending: Bool, callback : ( metricId: String,  timestamp: Int64,  value: Float,  anomaly: Float)->Bool ) {
+    func getMetricsValues (_ modelId: String, from:Date, to: Date, ascending: Bool, callback : @escaping ( _ metricId: String,  _ timestamp: Int64,  _ value: Float,  _ anomaly: Float)->Bool ) {
        
         //Do I need a Cache?
         var keyConditions : [String: AWSDynamoDBCondition] = [: ]
-        let dateFormatter : NSDateFormatter  = NSDateFormatter()
+        let dateFormatter : DateFormatter  = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
-        dateFormatter.timeZone = NSTimeZone(name : "UTC")
+        dateFormatter.timeZone = TimeZone(identifier : "UTC")
 
         
         // Set up the UID condition
         let uidCondition = AWSDynamoDBCondition()
-        uidCondition.comparisonOperator = AWSDynamoDBComparisonOperator.EQ
+        uidCondition?.comparisonOperator = AWSDynamoDBComparisonOperator.EQ
         
         let uidAttr = AWSDynamoDBAttributeValue()
-        uidAttr.S = modelId
+        uidAttr?.s = modelId
        
-        uidCondition.attributeValueList = [uidAttr]
+        uidCondition?.attributeValueList = [uidAttr]
         keyConditions["uid"] = uidCondition
         
         // Set up the date Condition
         let timestampCondition = AWSDynamoDBCondition()
-        timestampCondition.comparisonOperator = AWSDynamoDBComparisonOperator.Between
+        timestampCondition?.comparisonOperator = AWSDynamoDBComparisonOperator.between
         
         let fromAttr = AWSDynamoDBAttributeValue()
-        fromAttr.S = dateFormatter.stringFromDate(from)
+        fromAttr?.s = dateFormatter.string(from: from)
         
         let toAttr = AWSDynamoDBAttributeValue()
-        toAttr.S = dateFormatter.stringFromDate(to)
+        toAttr?.s = dateFormatter.string(from: to)
         
         
-        if ( from.compare(to) == NSComparisonResult.OrderedAscending) {
-            timestampCondition.attributeValueList = [fromAttr, toAttr]
+        if ( from.compare(to) == ComparisonResult.orderedAscending) {
+            timestampCondition?.attributeValueList = [fromAttr, toAttr]
         }else{
             
             // This should never happen
-              timestampCondition.attributeValueList = [toAttr, fromAttr]
+              timestampCondition?.attributeValueList = [toAttr, fromAttr]
         }
         
         keyConditions["timestamp"] = timestampCondition
 
         let query = AWSDynamoDBQueryInput()
-        query.tableName = TaurusClient.METRIC_DATA_TABLE
+        query?.tableName = TaurusClient.METRIC_DATA_TABLE
 
-        query.attributesToGet=["timestamp", "metric_value", "anomaly_score"]
-        query.keyConditions = keyConditions
-        query.scanIndexForward = ascending
+        query?.attributesToGet=["timestamp", "metric_value", "anomaly_score"]
+        query?.keyConditions = keyConditions
+        query?.scanIndexForward = ascending as NSNumber
         
+        print("getMetricValues")
         var done = false
         repeat {
-            let task =  awsClient.query( query).continueWithBlock {
-                (task: AWSTask!) -> AnyObject! in
+            let task =  awsClient.query( query).continue({ (task: AWSTask!) -> Any? in
                 let error = task.error
                 if (error != nil ){
-                    print(error)
+                    print(error!)
                     return nil
                 }
                 let taskResult = task.result
@@ -331,34 +343,34 @@ public class TaurusClient : GrokClient {
               //  let dateFormatter = NSDateFormatter()
               //  dateFormatter.dateFormat = "yyyy'-'MM'-'dd'T'HH"
                 
-                for item  in myResults{
+                for object in myResults!{
                     //    print( item )
-                    
-                    let timeStr = item["timestamp"] as! AWSDynamoDBAttributeValue
-                    let date = DataUtils.parseGrokDate(timeStr.S)
-                    let value = Float((item["metric_value"] as! AWSDynamoDBAttributeValue).N)!
-                    let anonomaly_score = Float((item["anomaly_score"] as! AWSDynamoDBAttributeValue).N)!
-                    
-    
-                    let dateSeconds = DataUtils.timestampFromDate(date!)
-                       
-                    
-                    
-                   let shouldCancel =  callback  ( metricId: modelId,  timestamp: dateSeconds,  value: value,  anomaly: anonomaly_score)
-                    
-                    if (shouldCancel){
-                        done = true
-                        break
-                    }
+                    if let item = object as? [String:Any] {
+                        let timeStr = item["timestamp"] as! AWSDynamoDBAttributeValue
+                        let date = DataUtils.parseGrokDate(timeStr.s)
+                        let value = Float((item["metric_value"] as! AWSDynamoDBAttributeValue).n)!
+                        let anonomaly_score = Float((item["anomaly_score"] as! AWSDynamoDBAttributeValue).n)!
+                        print("Successfully metrics value retrieved: " + String(describing: anonomaly_score))
         
+                        let dateSeconds = DataUtils.timestampFromDate(date!)
+                        
+                        
+                       let shouldCancel =  callback  ( modelId,  dateSeconds,  value,  anonomaly_score)
+                        
+                        if (shouldCancel){
+                            done = true
+                            break
+                        }
+        
+                    }
                 }
-                query.exclusiveStartKey =  results.lastEvaluatedKey
+                query?.exclusiveStartKey =  results.lastEvaluatedKey
                 if (results.lastEvaluatedKey == nil){
                     done = true
                 }
-                return nil
-            }
-            task.waitUntilFinished()
+            return()
+            } as AWSContinuationBlock)
+            task?.waitUntilFinished()
         } while !done
     }
     
@@ -370,114 +382,120 @@ public class TaurusClient : GrokClient {
         - parameter  ascending: sort order
         - parameter  callback: called for each instance data
     */
-    func getAllInstanceDataForDate( date : NSDate,  fromHour: Int,  toHour : Int,
-        ascending : Bool,callback : (InstanceData?)->Void?){
-            
+    func getAllInstanceDataForDate( _ date : Date,  fromHour: Int,  toHour : Int,
+        ascending : Bool,callback : @escaping (InstanceData?)->Void?){
             let query = AWSDynamoDBQueryInput()
-            query.tableName = TaurusClient.INSTANCE_DATA_HOURLY_TABLE
+            query?.tableName = TaurusClient.INSTANCE_DATA_HOURLY_TABLE
             var keyConditions : [String: AWSDynamoDBCondition] = [: ]
             
-            let dateFormatter : NSDateFormatter  = NSDateFormatter()
-            dateFormatter.timeZone = NSTimeZone(abbreviation: "UTC")!
+            let dateFormatter : DateFormatter  = DateFormatter()
+            dateFormatter.timeZone = TimeZone(abbreviation: "UTC")!
             dateFormatter.dateFormat = "yyyy-MM-dd"
             
-            let dateStr  = dateFormatter.stringFromDate( date )
+            let dateStr  = dateFormatter.string( from: date )
             let dateCondition = AWSDynamoDBCondition()
-            dateCondition.comparisonOperator = AWSDynamoDBComparisonOperator.EQ
+            dateCondition?.comparisonOperator = AWSDynamoDBComparisonOperator.EQ
             
             let dateAttr = AWSDynamoDBAttributeValue()
-            dateAttr.S = dateStr
+            dateAttr?.s = dateStr
             
-            dateCondition.attributeValueList = [dateAttr]
+            dateCondition?.attributeValueList = [dateAttr!]
             keyConditions["date"] = dateCondition
             
             let fromStr = String(format: "%02d", fromHour)
             let toStr = String(format: "%02d", toHour)
             
             let fromAttr = AWSDynamoDBAttributeValue()
-            fromAttr.S = fromStr
+            fromAttr?.s = fromStr
             
             
             let toAttr = AWSDynamoDBAttributeValue()
-            toAttr.S = toStr
+            toAttr?.s = toStr
             
             let timeCondition = AWSDynamoDBCondition()
             if (fromHour == toHour){
-                timeCondition.comparisonOperator = AWSDynamoDBComparisonOperator.EQ
-                timeCondition.attributeValueList = [fromAttr]
+                timeCondition?.comparisonOperator = AWSDynamoDBComparisonOperator.EQ
+                timeCondition?.attributeValueList = [fromAttr!]
             }else{
                 
-                timeCondition.comparisonOperator = AWSDynamoDBComparisonOperator.Between
-                timeCondition.attributeValueList = [fromAttr, toAttr]
+                timeCondition?.comparisonOperator = AWSDynamoDBComparisonOperator.between
+                timeCondition?.attributeValueList = [fromAttr!, toAttr!]
             }
         
          //   keyConditions["hour"] = timeCondition
 
-            query.attributesToGet=["instance_id", "date_hour", "anomaly_score"]
-            query.keyConditions = keyConditions
-            query.scanIndexForward = ascending
-            query.indexName = "taurus.instance_data_hourly-date_hour_index"
+            query?.attributesToGet=["instance_id", "date_hour", "anomaly_score"]
+            query?.keyConditions = keyConditions
+            query?.scanIndexForward = ascending as NSNumber
+            query?.indexName = "taurus.instance_data_hourly-date_hour_index"
             
         
             var done = false
+        
+            
             repeat {
-                 let task = awsClient.query( query).continueWithBlock {
-                    (task: AWSTask!) -> AnyObject! in
-                     let error = task.error
+                let task = awsClient.query( query).continue({ (task: AWSTask!) -> Any? in
+                    print("No error produced so far")
+                    let error = task.error
                     if (error != nil ){
-                        print(error)
+                        print(error!)
                         return nil
                     }
                     let taskResult = task.result
                     let results = taskResult as! AWSDynamoDBQueryOutput
-                    let myResults  = results.items
-                 
-                    let dateFormatter = NSDateFormatter()
-                    dateFormatter.dateFormat = "yyyy'-'MM'-'dd'T'HH"
-                    dateFormatter.timeZone =  NSTimeZone(name : "UTC")
-
                     
-                    for item  in myResults{
-                        var anomalyScore :Double = 0.0
-                        let date_hour = item["date_hour"] as! AWSDynamoDBAttributeValue
-                        let instance_id = (item["instance_id"] as! AWSDynamoDBAttributeValue).S
-                        let anonomaly_score = (item["anomaly_score"] as! AWSDynamoDBAttributeValue).M
-                    //    print (date_hour)
-                        let date = dateFormatter.dateFromString( date_hour.S)!
-                     //   print ( "instanceData" + date.description)
-                        var metricMask = MetricType()
-                        
-                   /*    print (instance_id)
-                        print (date)
-                        print (anonomaly_score)
-                     */
-                        let dateSeconds =  DataUtils.timestampFromDate(date)
-                        
-
-                        for (key, anomalyValue) in anonomaly_score {
-                            let score :Double = Double ( anomalyValue.N)!
-                            let scaledScore = DataUtils.logScale(abs(score))
-                         //   print ("score : %s", scaledScore)
+                    let myResults  = results.items
+                    
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateFormat = "yyyy'-'MM'-'dd'T'HH"
+                    dateFormatter.timeZone =  TimeZone(identifier : "UTC")
+                    
+                    //let json = JSON(data: myResults)
+                    print("getting all instance data for date")
+                    
+                    for object in myResults!{
+                        if let item = object as? [String:Any]{
+                            var anomalyScore :Double = 0.0
+                            let date_hour = item["date_hour"] as! AWSDynamoDBAttributeValue
+                            let instance_id = (item["instance_id"] as! AWSDynamoDBAttributeValue).s
+                            let anonomaly_score = (item["anomaly_score"] as! AWSDynamoDBAttributeValue).m
+                            //    print (date_hour)
+                            let date = dateFormatter.date( from: date_hour.s)!
+                            //   print ( "instanceData" + date.description)
+                            var metricMask = MetricType()
                             
-                            if (Float(scaledScore) >= TaurusApplication.yellowBarFloor){
-                                metricMask.insert(MetricType.enumForKey(key as! String))
+                            /*    print (instance_id)
+                             print (date)
+                             print (anonomaly_score)
+                             */
+                            let dateSeconds =  DataUtils.timestampFromDate(date)
+                            
+                            
+                            for (key, anomalyValue) in anonomaly_score! {
+                                let score :Double = Double ( (anomalyValue as AnyObject).n)!
+                                let scaledScore = DataUtils.logScale(abs(score))
+                                //   print ("score : %s", scaledScore)
+                                
+                                if (Float(scaledScore) >= TaurusApplication.yellowBarFloor){
+                                    metricMask.insert(MetricType.enumForKey(key as! String))
+                                }
+                                anomalyScore = max(score, anomalyScore)
                             }
-                            anomalyScore = max(score, anomalyScore)
+                            
+                            let instanceData = TaurusApplication.dataFactory.createInstanceData(instance_id, aggregation: AggregationType.Day, timestamp: dateSeconds, anomalyScore: Float(anomalyScore), metricMask: metricMask)
+                            callback (instanceData)
                         }
-                      
-                        let instanceData = TaurusApplication.dataFactory.createInstanceData(instance_id, aggregation: AggregationType.Day, timestamp: dateSeconds, anomalyScore: Float(anomalyScore), metricMask: metricMask)
-                        callback (instanceData)
                     }
-                    query.exclusiveStartKey =  results.lastEvaluatedKey
+                    query?.exclusiveStartKey =  results.lastEvaluatedKey
                     if (results.lastEvaluatedKey == nil){
                         done = true
                     }
-                    return nil
-                }
-                task.waitUntilFinished()
+                    return()
+                } as AWSContinuationBlock)
+                task?.waitUntilFinished() 
             } while !done
-            
-             callback (nil)
+        
+            callback (nil)
     }
     
     
@@ -487,18 +505,20 @@ public class TaurusClient : GrokClient {
         - parameter ascending : sort order
         - parameter callbab: will be called for each InstanceData
     */
-    func  getAllInstanceData( from : NSDate,  to: NSDate,  ascending : Bool, callback:(InstanceData?)->Void? ) {
-        let calendar =  NSCalendar(identifier:NSCalendarIdentifierGregorian)!
-        calendar.timeZone = NSTimeZone(abbreviation: "UTC")!
+    func  getAllInstanceData( _ from : Date,  to: Date,  ascending : Bool, callback:@escaping (InstanceData?)->Void? ) {
+        var calendar =  Calendar(identifier:Calendar.Identifier.gregorian)
+        calendar.timeZone = TimeZone(abbreviation: "UTC")!
     
-        let fromDay = calendar.ordinalityOfUnit(.Day, inUnit: .Year, forDate: from)
-        let toDay = calendar.ordinalityOfUnit(.Day, inUnit: .Year, forDate: to)
+        let fromDay = (calendar as NSCalendar).ordinality(of: .day, in: .year, for: from)
+        let toDay = (calendar as NSCalendar).ordinality(of: .day, in: .year, for: to)
 
 
         // Check if "from" date and "to" date falls on the same day
         if (fromDay == toDay) {
-             getAllInstanceDataForDate(from, fromHour: calendar.component(NSCalendarUnit.Hour, fromDate: from), toHour: calendar.component(NSCalendarUnit.Hour, fromDate: to), ascending: ascending, callback : callback)
+            print("getting instance data from today")
+             getAllInstanceDataForDate(from, fromHour: (calendar as NSCalendar).component(NSCalendar.Unit.hour, from: from), toHour: (calendar as NSCalendar).component(NSCalendar.Unit.hour, from: to), ascending: ascending, callback : callback)
         } else {
+            print("getting instance data from a different day")
             // Get Multiple days
             var totalDays = toDay - fromDay;
             // Account for intervals at the end of the year where fromDay could be greater than toDay
@@ -512,19 +532,16 @@ public class TaurusClient : GrokClient {
                 date = from;
                 interval = 1;
             }
-            
-            for var i = 0; i<=totalDays ; i++ {
+            for i in 0...totalDays {
+               NotificationCenter.default.post(name: Foundation.Notification.Name(rawValue: DataSyncService.PROGRESS_STATE_EVENT), object: date)
                 
-                 NSNotificationCenter.defaultCenter().postNotificationName(DataSyncService.PROGRESS_STATE_EVENT, object: date)
-                
-             //   print (date)
-                getAllInstanceDataForDate(date, fromHour:0, toHour: 23, ascending: ascending, callback : callback)
+               getAllInstanceDataForDate(date, fromHour:0, toHour: 23, ascending: ascending, callback : callback)
                 
                 // FIXME verify this handles end of year wrapping properly
-                date = calendar.dateByAddingUnit(NSCalendarUnit.Day, value: interval, toDate: date, options: [])!
+               date = (calendar as NSCalendar).date(byAdding: NSCalendar.Unit.day, value: interval, to: date, options: [])!
             }
             
-             NSNotificationCenter.defaultCenter().postNotificationName(DataSyncService.PROGRESS_STATE_EVENT, object: nil)
+             NotificationCenter.default.post(name: Foundation.Notification.Name(rawValue: DataSyncService.PROGRESS_STATE_EVENT), object: nil)
         }
     }
 }

@@ -20,11 +20,11 @@
 import Foundation
 
 
-public class TaurusDataSyncService: DataSyncService{
+open class TaurusDataSyncService: DataSyncService{
     /**
      * This Event is fired on instance data changes
      */
-    public static let INSTANCE_DATA_CHANGED_EVENT = "com.numenta.taurus.data.InstanceDataChangedEvent"
+    open static let INSTANCE_DATA_CHANGED_EVENT = "com.numenta.taurus.data.InstanceDataChangedEvent"
 
     /** loads  instance data
     */
@@ -33,7 +33,7 @@ public class TaurusDataSyncService: DataSyncService{
         let db = TaurusApplication.getTaurusDatabase()
         var from = db.getLastTimestamp()
     
-        let nowDate = NSDate()
+        let nowDate = Date()
         let now = DataUtils.timestampFromDate( nowDate )
         // The server updates the instance data table into hourly buckets as the models process
         // data. This may leave the last hour with outdated values when the server updates the
@@ -43,38 +43,38 @@ public class TaurusDataSyncService: DataSyncService{
         // previous hour once.
         
         
-        let defaults = NSUserDefaults.standardUserDefaults()
-        var date = defaults.objectForKey("previous_hour_threshold") as? NSDate
+        let defaults = UserDefaults.standard
+        var date = defaults.object(forKey: "previous_hour_threshold") as? Date
         if ( date == nil ){
-            date = NSDate()
+            date = Date()
         }
 
         if (now >= DataUtils.timestampFromDate(date!)) {
             // Download the previous hour
             from -= DataUtils.MILLIS_PER_HOUR;
-            let units : NSCalendarUnit = [NSCalendarUnit.Year,
-                NSCalendarUnit.Month,
-                NSCalendarUnit.Day,
-                NSCalendarUnit.Hour,
-                NSCalendarUnit.Minute]
+            let units : NSCalendar.Unit = [NSCalendar.Unit.year,
+                NSCalendar.Unit.month,
+                NSCalendar.Unit.day,
+                NSCalendar.Unit.hour,
+                NSCalendar.Unit.minute]
             
             
            
-            var newDate =  NSCalendar.currentCalendar().dateByAddingUnit(
-                NSCalendarUnit.Hour, // adding hours
+            var newDate =  (Calendar.current as NSCalendar).date(
+                byAdding: NSCalendar.Unit.hour, // adding hours
                 value: 1,
-                toDate: nowDate ,
+                to: nowDate ,
                 options: []
             )
             
             
-            let components = NSCalendar.currentCalendar().components (units, fromDate: newDate!)
+            var components = (Calendar.current as NSCalendar).components (units, from: newDate!)
             components.minute = 15
             components.second = 0
            
-            newDate = NSCalendar.currentCalendar().dateFromComponents(components)
+            newDate = Calendar.current.date(from: components)
             
-            defaults.setObject( newDate, forKey: "previous_hour_threshold")
+            defaults.set( newDate, forKey: "previous_hour_threshold")
         }
         
         
@@ -120,7 +120,7 @@ public class TaurusDataSyncService: DataSyncService{
     /** Broadcast the ANNOTATION_CHANGED_EVENT notification
      */
     func fireInstanceDataChangedEvent() {
-        NSNotificationCenter.defaultCenter().postNotificationName(TaurusDataSyncService.INSTANCE_DATA_CHANGED_EVENT, object: self)
+        NotificationCenter.default.post(name: Foundation.Notification.Name(rawValue: TaurusDataSyncService.INSTANCE_DATA_CHANGED_EVENT), object: self)
     }
 
 

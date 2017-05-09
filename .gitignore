@@ -1,3 +1,5 @@
+taurus-mobile/ios/src/app/AppConfig.swift
+.git.*
 *.pyc
 *.sublime-project
 *.sublime-workspace

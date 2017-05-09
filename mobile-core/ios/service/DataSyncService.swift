@@ -23,7 +23,7 @@
 import Foundation
 
 
-public class DataSyncService{
+open class DataSyncService{
     var client : GrokClient
 
     /*Bunch of strings used for notifications of data changed events */
@@ -32,55 +32,55 @@ public class DataSyncService{
     /**
     * This Event is fired on metric changes
     */
-    public static let METRIC_CHANGED_EVENT = "com.numenta.core.data.MetricChangedEvent"
+    open static let METRIC_CHANGED_EVENT = "com.numenta.core.data.MetricChangedEvent"
     
     /**
     * This Event is fired on annotations changes
     */
-    public static let ANNOTATION_CHANGED_EVENT = "com.numenta.core.data.AnnotationChangedEvent"
+    open static let ANNOTATION_CHANGED_EVENT = "com.numenta.core.data.AnnotationChangedEvent"
     
     /**
     * This Event is fired when the server starts and stops downloading data. Check event's <b>
     * <code>isRefreshing</code></b> parameter for refreshing status.
     */
-    public static let REFRESH_STATE_EVENT = "com.numenta.core.data.RefreshStateEvent"
+    open static let REFRESH_STATE_EVENT = "com.numenta.core.data.RefreshStateEvent"
 
     
     /**
      * This Event is fired when the server starts and stops downloading data. Check event's <b>
      * <code>isRefreshing</code></b> parameter for refreshing status.
      */
-    public static let PROGRESS_STATE_EVENT = "com.numenta.core.data.ProgressStateEvent"
+    open static let PROGRESS_STATE_EVENT = "com.numenta.core.data.ProgressStateEvent"
     
     /**
     * Default Refresh rate in minutes. User may override using application settings
     */
-    public static let REFRESH_RATE = "5"
+    open static let REFRESH_RATE = "5"
   
     
     /** Broadcast the REFRESH_STATE_EVENT notification
     */
-    func fireRefreshStateEvent(isRefreshing: Bool, result: String){
-        NSNotificationCenter.defaultCenter().postNotificationName(DataSyncService.REFRESH_STATE_EVENT, object: isRefreshing)
+    func fireRefreshStateEvent(_ isRefreshing: Bool, result: String){
+        NotificationCenter.default.post(name: Foundation.Notification.Name(rawValue: DataSyncService.REFRESH_STATE_EVENT), object: isRefreshing)
     }
     
     
     /** Broadcast the METRIC_CHANGED_EVENT notification
     */
     func fireMetricChanged(){
-         NSNotificationCenter.defaultCenter().postNotificationName(DataSyncService.METRIC_CHANGED_EVENT, object: self)
+         NotificationCenter.default.post(name: Foundation.Notification.Name(rawValue: DataSyncService.METRIC_CHANGED_EVENT), object: self)
     }
     
     /** Broadcast the METRIC_DATA_CHANGED_EVENT notification
     */
     func fireMetricDataChanged(){
-         NSNotificationCenter.defaultCenter().postNotificationName(DataSyncService.METRIC_DATA_CHANGED_EVENT, object: self)
+         NotificationCenter.default.post(name: Foundation.Notification.Name(rawValue: DataSyncService.METRIC_DATA_CHANGED_EVENT), object: self)
     }
     
     /** Broadcast the ANNOTATION_CHANGED_EVENT notification
     */
     func fireAnnotationChanged(){
-        NSNotificationCenter.defaultCenter().postNotificationName(DataSyncService.ANNOTATION_CHANGED_EVENT, object: self)
+        NotificationCenter.default.post(name: Foundation.Notification.Name(rawValue: DataSyncService.ANNOTATION_CHANGED_EVENT), object: self)
     }
     
     /** Syncs metrics with DB
@@ -91,7 +91,7 @@ public class DataSyncService{
         var metricsAdded :Int32 = 0
         // Get metrics from server
         let remoteMetrics = client.getMetrics();
-        if (remoteMetrics.count == 0 ) {
+        if (remoteMetrics?.count == 0 ) {
             return 0;
         }
       
@@ -100,23 +100,23 @@ public class DataSyncService{
         var dataChanged = false;
        // Metric localMetric;
         let database = GrokApplication.getDatabase()
-        for  remoteMetric in remoteMetrics {
+        for  remoteMetric in remoteMetrics! {
             // Check if it is a new metric
-            let localMetric = database.getMetric(remoteMetric.getId());
+            let localMetric = database.getMetric(remoteMetric?.getId());
             if (localMetric == nil) {
                 database.addMetric(remoteMetric);
                 dataChanged = true;
-                metricsAdded++
+                metricsAdded += 1
             } else {
                 // Check for metric changes
-                if (remoteMetric.getLastRowId() != localMetric.getLastRowId()) {
+                if (remoteMetric?.getLastRowId() != localMetric?.getLastRowId()) {
                     // Use local metric last timestamp
-                    remoteMetric.setLastTimestamp(localMetric.getLastTimestamp());
+                    remoteMetric?.setLastTimestamp((localMetric?.getLastTimestamp())!);
                     // Update metric.
                     database.updateMetric(remoteMetric);
                 }
             }
-            metricSet.insert(remoteMetric.getId());
+            metricSet.insert((remoteMetric?.getId())!);
         }
         
         // Consolidate database by removing metrics from local cache
@@ -136,7 +136,7 @@ public class DataSyncService{
     }
     
     //
-    func scheduleUpdate (rate : Int64){
+    func scheduleUpdate (_ rate : Int64){
       // fix me need to implement
     }
     
@@ -165,11 +165,11 @@ public class DataSyncService{
          // not used for
     }
     
-    func deleteAnnotation( annotationId: String) {
+    func deleteAnnotation( _ annotationId: String) {
         // not used
     }
     
-    func addAnnotation ( timestamp: NSDate, server :String , message: String, user : String ){
+    func addAnnotation ( _ timestamp: Date, server :String , message: String, user : String ){
         // not used
     }
     

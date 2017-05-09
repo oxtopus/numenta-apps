@@ -39,12 +39,12 @@ class TaurusDatabase: CoreDatabaseImpl,TaurusDBProtocol {
         super.init(dataFactory : dataFactory)
         
         
-        NSNotificationCenter.defaultCenter().addObserverForName(DataSyncService.REFRESH_STATE_EVENT, object: nil, queue: nil, usingBlock: {
+        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: DataSyncService.REFRESH_STATE_EVENT), object: nil, queue: nil, using: {
             [unowned self] note in
             
             let property = note.object as! Bool
                 if (property == false){
-                    dispatch_async(dispatch_get_global_queue( QOS_CLASS_USER_INTERACTIVE, 0)) {
+                    DispatchQueue.global( qos: DispatchQoS.QoSClass.userInteractive).async {
                         
                         self.loadAllInstanceData()
                     }
@@ -53,7 +53,7 @@ class TaurusDatabase: CoreDatabaseImpl,TaurusDBProtocol {
             })
         // Load instance data
         // FIXME Do we want to be lazy about this? Loading the 6 or 7 rows when required is probably a heck of a lot faster
-        dispatch_async(dispatch_get_global_queue( QOS_CLASS_USER_INTERACTIVE, 0)) {
+        DispatchQueue.global( qos: DispatchQoS.QoSClass.userInteractive).async {
 
             self.loadAllInstanceData()
        }
@@ -63,14 +63,14 @@ class TaurusDatabase: CoreDatabaseImpl,TaurusDBProtocol {
         FIXME Do we want to be lazy about this? Loading the 6 or 7 rows when required is probably a heck of a lot faster
     */
     func loadAllInstanceData(){
-        var to:Int64 = DataUtils.timestampFromDate( NSDate())
+        var to:Int64 = DataUtils.timestampFromDate( Date())
         var from =  to - DataUtils.MILLIS_PER_DAY
         var oldestTimeStamp = to
         
         //print (DataUtils.dateFromTimestamp(to))
-        let dateFormatter : NSDateFormatter  = NSDateFormatter()
+        let dateFormatter : DateFormatter  = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
-        dateFormatter.timeZone = NSTimeZone(forSecondsFromGMT: 0)
+        dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
         
         sqlHelper.dbQueue.inDatabase() {
             db in
@@ -79,46 +79,46 @@ class TaurusDatabase: CoreDatabaseImpl,TaurusDBProtocol {
         let whereClause:String? =  "timestamp >= ? AND timestamp <= ?"
         let columns = ["instance_id", "timestamp", "anomaly_score"/*, "aggregation"*/, "metric_mask"]
             
-            for ( var i :Int64 = 0; i < GrokApplication.getNumberOfDaysToSync(); i++){
+            for i in 0...GrokApplication.getNumberOfDaysToSync(){
             
-            let cursor = self.sqlHelper.query(db, tableName: InstanceData.TABLE_NAME, columns: columns,
-            whereClause: whereClause, whereArgs: [NSNumber(longLong: from), NSNumber(longLong: to)], sortBy: nil)
+            let cursor = self.sqlHelper.query(db!, tableName: InstanceData.TABLE_NAME, columns: columns,
+            whereClause: whereClause, whereArgs: [NSNumber(value: from as Int64), NSNumber(value: to as Int64)], sortBy: nil)
         
      
             if (cursor == nil){
              //   print (sqlHelper.database.lastError())
             }
             
-            let instaceIdColumn = cursor.columnIndexForName("instance_id")
-            let timestampColumn = cursor.columnIndexForName("timestamp")
-            let anomalyColumn = cursor.columnIndexForName("anomaly_score")
-            let metricMaskColumn = cursor.columnIndexForName("metric_mask")
-            while cursor.next(){
+            let instaceIdColumn = cursor?.columnIndex(forName: "instance_id")
+            let timestampColumn = cursor?.columnIndex(forName: "timestamp")
+            let anomalyColumn = cursor?.columnIndex(forName: "anomaly_score")
+            let metricMaskColumn = cursor?.columnIndex(forName: "metric_mask")
+            while (cursor?.next())!{
        
-                let instanceId = cursor.stringForColumnIndex(instaceIdColumn)
-                let timestamp = cursor.longLongIntForColumnIndex(timestampColumn)
-                let anomalyScore = Float(cursor.doubleForColumnIndex(anomalyColumn))
+                let instanceId = cursor?.string(forColumnIndex: instaceIdColumn!)
+                let timestamp = cursor?.longLongInt(forColumnIndex: timestampColumn!)
+                let anomalyScore = Float((cursor?.double(forColumnIndex: anomalyColumn!))!)
 
            //   print ( DataUtils.dateFromTimestamp((timestamp)))
                 var metricMask = MetricType()
-                metricMask.rawValue = Int(cursor.intForColumnIndex(metricMaskColumn))
+                metricMask.rawValue = Int((cursor?.int(forColumnIndex: metricMaskColumn!))!)
 
                 let anomalyValue = AnomalyValue( anomaly: anomalyScore, metricMask: metricMask)
-                var cacheEntry = self.instanceDataCache[instanceId]
+                var cacheEntry = self.instanceDataCache[instanceId!]
                 if ( cacheEntry == nil){
                     cacheEntry = InstanceCacheEntry()
-                    self.instanceDataCache[instanceId] = cacheEntry
+                    self.instanceDataCache[instanceId!] = cacheEntry
                 }
                 
-                cacheEntry!.data[timestamp] =  anomalyValue
+                cacheEntry!.data[timestamp!] =  anomalyValue
                 
             
-                if (timestamp > self.lastTimestamp){
-                    self.lastTimestamp = timestamp
+                if (timestamp! > self.lastTimestamp){
+                    self.lastTimestamp = timestamp!
                 }
                 
-                if (timestamp<oldestTimeStamp){
-                    oldestTimeStamp = timestamp
+                if (timestamp!<oldestTimeStamp){
+                    oldestTimeStamp = timestamp!
                 }
             }
             // Get previous day
@@ -131,19 +131,19 @@ class TaurusDatabase: CoreDatabaseImpl,TaurusDBProtocol {
         print (DataUtils.dateFromTimestamp(self.firstTimestamp))
         print (DataUtils.dateFromTimestamp(self.lastTimestamp))
 
-        NSNotificationCenter.defaultCenter().postNotificationName(TaurusDatabase.INSTANCEDATALOADED, object: self)
+        NotificationCenter.default.post(name: Foundation.Notification.Name(rawValue: TaurusDatabase.INSTANCEDATALOADED), object: self)
     }
     
     /** get Ticker symbol for the given instance ID
         - paramter intanceId: id to find symbol of
         - returns: ticker symbol, nil if the instanceId couldn't be found
     */
-    func getTickerSymbol( instanceId: String)->String?{
+    func getTickerSymbol( _ instanceId: String)->String?{
         var metrics = getMetricsByInstanceId(instanceId)
         var symbol: String? = nil
         if (metrics?.isEmpty == false ) {
             // FIXME: TAUR-817: Create taurus specific instance table
-            symbol = metrics[0].getUserInfo("symbol");
+            symbol = metrics?[0].getUserInfo("symbol");
         }
         return symbol;
     }
@@ -152,7 +152,7 @@ class TaurusDatabase: CoreDatabaseImpl,TaurusDBProtocol {
         -parameter data: instance date to update
         -result: true if update suceeded
     */
-    func updateInstanceData(data:InstanceData)->Bool{
+    func updateInstanceData(_ data:InstanceData)->Bool{
         if (updateInstanceDataCache(data)) {
             // Update database
             return super.updateInstanceData(data);
@@ -166,7 +166,7 @@ class TaurusDatabase: CoreDatabaseImpl,TaurusDBProtocol {
         -result: true if update suceeded
 
     */
-    func addInstanceDataBatch (batch :[InstanceData])->Bool{
+    func addInstanceDataBatch (_ batch :[InstanceData])->Bool{
         var modified = false;
         for  data : InstanceData in batch {
             if (updateInstanceDataCache(data)) {
@@ -184,9 +184,9 @@ class TaurusDatabase: CoreDatabaseImpl,TaurusDBProtocol {
     /** delete instance
         -parameter instanceId: instance to delete
     */
-    func deleteInstance(instanceId: String){
-        instanceDataCache.removeValueForKey(instanceId)
-        lastUpdated = Int64(NSDate().timeIntervalSince1970*1000.0)
+    func deleteInstance(_ instanceId: String){
+        instanceDataCache.removeValue(forKey: instanceId)
+        lastUpdated = Int64(Date().timeIntervalSince1970*1000.0)
         super.deleteInstance(instanceId)
     }
     
@@ -195,14 +195,14 @@ class TaurusDatabase: CoreDatabaseImpl,TaurusDBProtocol {
     */
     override func deleteAll(){
         instanceDataCache = [:]
-        lastUpdated = Int64(NSDate().timeIntervalSince1970*1000.0)
+        lastUpdated = Int64(Date().timeIntervalSince1970*1000.0)
         super.deleteAll()
 
     }
     
     /** update instance cacha
     */
-    func updateInstanceDataCache(data: InstanceData )->Bool {
+    func updateInstanceDataCache(_ data: InstanceData )->Bool {
         let taurusInstanceData = data as! TaurusInstanceData
         var cacheEntry = getInstanceCachedValues(data.getInstanceId())
         let timestamp = data.getTimestamp()
@@ -236,14 +236,14 @@ class TaurusDatabase: CoreDatabaseImpl,TaurusDBProtocol {
         if (timestamp < firstTimestamp) {
             firstTimestamp = timestamp;
         }
-        lastUpdated = DataUtils.timestampFromDate( NSDate())
+        lastUpdated = DataUtils.timestampFromDate( Date())
         return true 
     }
     
     /** retrieve id from cache
         - parameter instanceId:
     */
-    func  getInstanceCachedValues( instanceId: String) ->InstanceCacheEntry?{
+    func  getInstanceCachedValues( _ instanceId: String) ->InstanceCacheEntry?{
         let cacheEntry = instanceDataCache[instanceId]
         return cacheEntry
     }
@@ -255,11 +255,11 @@ class TaurusDatabase: CoreDatabaseImpl,TaurusDBProtocol {
         - parameter to: end time
         - returns: dictionary of timestamps and AnomalyValue
     */
-    func getInstanceData( instanceId : String,  from : Int64,  to : Int64) ->[Int64: AnomalyValue]?{
+    func getInstanceData( _ instanceId : String,  from : Int64,  to : Int64) ->[Int64: AnomalyValue]?{
         var endTime = to
         if (endTime <= 0 ) {
             // Use current time as upper limit
-            endTime = Int64(NSDate().timeIntervalSince1970*1000)
+            endTime = Int64(Date().timeIntervalSince1970*1000)
         }
 
         // Get instance cached values

@@ -22,7 +22,7 @@
 * Factory used to create Taurus Data model Objects
 */
 class TaurusDataFactory: CoreDataFactoryImpl {
-    func createTweet(tweetId: String, aggregated: NSDate, created: NSDate, userId: String, userName: String, text: String, retweetCount: Int32) -> Tweet! {
+    func createTweet(_ tweetId: String, aggregated: Date, created: Date, userId: String, userName: String, text: String, retweetCount: Int32) -> Tweet! {
         
         let aggreatedTime : Int64 =  Int64(aggregated.timeIntervalSince1970*1000)
         let createdTime : Int64 = Int64(created.timeIntervalSince1970*1000)
@@ -30,19 +30,19 @@ class TaurusDataFactory: CoreDataFactoryImpl {
         return Tweet(id: tweetId, aggregated: aggreatedTime, created: createdTime, userId: userId, userName: userName, text: text, retweetTotal: retweetCount)
     }
 
-    override func createInstanceData( cursor: FMResultSet!) -> InstanceData! {
+    override func createInstanceData( _ cursor: FMResultSet!) -> InstanceData! {
         return TaurusInstanceData(cursor : cursor)
     }
 
-    func createInstanceData(instanceId: String!, aggregation: AggregationType!, timestamp: Int64, anomalyScore: Float, metricMask: MetricType!) -> InstanceData! {
+    func createInstanceData(_ instanceId: String!, aggregation: AggregationType!, timestamp: Int64, anomalyScore: Float, metricMask: MetricType!) -> InstanceData! {
         return TaurusInstanceData( instanceId: instanceId, aggregation:  aggregation.minutes(), timestamp:  timestamp, anomalyScore: anomalyScore, metricMask: metricMask)
     }
 
-    func createInstanceData(instanceId: String!, aggregation: AggregationType!, timestamp: Int64, anomalyScore: Float, metricMask: MetricType) -> InstanceData! {
+    func createInstanceData(_ instanceId: String!, aggregation: AggregationType!, timestamp: Int64, anomalyScore: Float, metricMask: MetricType) -> InstanceData! {
         return TaurusInstanceData(instanceId : instanceId, aggregation:  aggregation.minutes(), timestamp: timestamp, anomalyScore : anomalyScore,  metricMask: metricMask)
     }
 
-    func createNotification(instanceId: String!, timestamp: Int64, description: String!) -> Notification! {
+    func createNotification(_ instanceId: String!, timestamp: Int64, description: String!) -> Notification! {
         return TaurusNotification(instanceId,  timestamp: timestamp,  description: description)
     }
 }

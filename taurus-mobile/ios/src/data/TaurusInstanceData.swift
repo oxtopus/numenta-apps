@@ -26,14 +26,14 @@ class TaurusInstanceData: InstanceData {
     var metricMask: MetricType = MetricType()
 
     override init(cursor: FMResultSet!) {
-         self.metricMask.rawValue = Int(cursor.intForColumn("metric_mask"))
+         self.metricMask.rawValue = Int(cursor.int(forColumn: "metric_mask"))
         super.init(cursor: cursor )
        
     }
 
     override func getValues()-> Dictionary<String, AnyObject>! {
         var values:  Dictionary<String, AnyObject> = super.getValues()
-        values["metric_mask"] = NSNumber(integer:  metricMask.rawValue)
+        values["metric_mask"] = NSNumber(value: metricMask.rawValue as Int)
         return values
     }
 

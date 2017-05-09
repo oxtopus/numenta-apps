@@ -44,7 +44,7 @@ class LineChartView: UIView {
      //   setData()
     }
     
-    override func drawRect(rect: CGRect) {
+    override func draw(_ rect: CGRect) {
       
         self.contentArea = rect
         
@@ -73,7 +73,7 @@ class LineChartView: UIView {
     /** draw marker in response to user touches
         - parameter rect : drawing rectangle of the view
     */
-    func drawMarker ( rect : CGRect){
+    func drawMarker ( _ rect : CGRect){
         if (markerX<0){
             return
         }
@@ -89,14 +89,14 @@ class LineChartView: UIView {
         
         bar.origin.x = CGFloat(markerX)
         
-        CGContextSaveGState( context)
-        CGContextSetFillColorWithColor(context, UIColor.whiteColor().CGColor)
-        CGContextAddRect(context, bar)
-        CGContextFillPath(context)
-        CGContextRestoreGState( context)
+        context.saveGState()
+        context.setFillColor(UIColor.white.cgColor)
+        context.addRect(bar)
+        context.fillPath()
+        context.restoreGState()
     }
     
-    func drawAnomalies(rect: CGRect ){
+    func drawAnomalies(_ rect: CGRect ){
         let context = UIGraphicsGetCurrentContext()!
         var bar : CGRect = CGRect()
  
@@ -132,18 +132,18 @@ class LineChartView: UIView {
                    continue
                 }
        
-                CGContextSaveGState( context)
-                CGContextSetFillColorWithColor(context, color)
-                CGContextAddRect(context, bar)
-                CGContextFillPath(context)
-                CGContextRestoreGState( context)
+                context.saveGState()
+                context.setFillColor(color)
+                context.addRect(bar)
+                context.fillPath()
+                context.restoreGState()
  
             }
             
         }
     }
     
-    func getLevel(value :Double)->Int{
+    func getLevel(_ value :Double)->Int{
         if (value.isNaN) {
             return 0
         }
@@ -157,20 +157,20 @@ class LineChartView: UIView {
     
    
     
-    func drawValues(rect: CGRect){
+    func drawValues(_ rect: CGRect){
         let context = UIGraphicsGetCurrentContext()!
         
-        CGContextSaveGState( context)
+        context.saveGState()
         
         var points = [Double]()
-        CGContextSetLineWidth(context, 2.0)
+        context.setLineWidth(2.0)
       //  let colorSpace = CGColorSpaceCreateDeviceRGB()
       //  let components: [CGFloat] = [0.0, 0.0, 1.0, 1.0]
         let color = Appearence.lineChartColor
         
         
         
-        CGContextSetStrokeColorWithColor(context, color)
+        context.setStrokeColor(color)
         
         var x1,y1,x2,y2,y0 : Double
 
@@ -184,11 +184,11 @@ class LineChartView: UIView {
          points.append(  points[0]+pointWidth/2.0)
          points.append(  (convertToPixel(self.data[0])))
         
-        CGContextMoveToPoint(context, CGFloat(points[0]), CGFloat(points[1]))
-        CGContextAddLineToPoint(context, CGFloat(points[2]),  CGFloat(points[3]))
+        context.move(to: CGPoint(x: CGFloat(points[0]), y: CGFloat(points[1])))
+        context.addLine(to: CGPoint(x: CGFloat(points[2]), y: CGFloat(points[3])))
         
    
-        for (var i = 1; i < data.count ; i++){
+        for i in 1...data.count {
             x1 = points[ (i-1)*4+2]
             y1 = points[ (i-1)*4+3]
 
@@ -221,37 +221,37 @@ class LineChartView: UIView {
             points.append(x2)
             points.append(y2)
            // print (x2)
-            CGContextMoveToPoint(context, CGFloat(x1 ), CGFloat(y1))
+            context.move(to: CGPoint(x: CGFloat(x1 ), y: CGFloat(y1)))
            //  CGContextMoveToPoint(context, CGFloat(x2 ), CGFloat(rect.height))
-               CGContextAddLineToPoint(context, CGFloat( x2 ),  CGFloat( y2))
+               context.addLine(to: CGPoint(x: CGFloat( x2 ), y: CGFloat( y2)))
                    }
 
-        CGContextStrokePath(context)
-        CGContextRestoreGState( context)
+        context.strokePath()
+        context.restoreGState()
     }
     
-    func drawAxes( rect: CGRect ){
+    func drawAxes( _ rect: CGRect ){
         
         let context = UIGraphicsGetCurrentContext()
         
-        CGContextSaveGState( context)
+        context?.saveGState()
         
-        CGContextSetLineWidth(context, 2.0)
+        context?.setLineWidth(2.0)
         let colorSpace = CGColorSpaceCreateDeviceRGB()
         let components: [CGFloat] = [1.0, 1.0, 1.0, 1.0]
-        let color = CGColorCreate(colorSpace, components)
-        CGContextSetStrokeColorWithColor(context, color)
+        let color = CGColor(colorSpace: colorSpace, components: components)
+        context?.setStrokeColor(color!)
         
         
-        CGContextMoveToPoint(context, rect.origin.x, 0)
-        CGContextAddLineToPoint(context, rect.origin.x, rect.height)
-        CGContextAddLineToPoint(context, rect.origin.x+rect.width, rect.height)
+        context?.move(to: CGPoint(x: rect.origin.x, y: 0))
+        context?.addLine(to: CGPoint(x: rect.origin.x, y: rect.height))
+        context?.addLine(to: CGPoint(x: rect.origin.x+rect.width, y: rect.height))
         
-        CGContextStrokePath(context)
-        CGContextRestoreGState( context)
+        context?.strokePath()
+        context?.restoreGState()
     }
     
-    func drawYLabels (rect: CGRect){
+    func drawYLabels (_ rect: CGRect){
         
         if (self.isEmpty){
             if (self.emptyTextString == nil){
@@ -259,31 +259,31 @@ class LineChartView: UIView {
             }
             let context = UIGraphicsGetCurrentContext()
             
-            let fieldColor: UIColor = UIColor.whiteColor()
+            let fieldColor: UIColor = UIColor.white
            
-            let font = UIFont.boldSystemFontOfSize(16.0)
+            let font = UIFont.boldSystemFont(ofSize: 16.0)
 
             
-            CGContextSaveGState( context)
+            context?.saveGState()
             
-            let size = self.emptyTextString?.sizeWithAttributes([NSFontAttributeName : font,  NSForegroundColorAttributeName: fieldColor])
+            let size = self.emptyTextString?.size(attributes: [NSFontAttributeName : font,  NSForegroundColorAttributeName: fieldColor])
             let x = rect.width/2 - size!.width/2
             let top =  rect.height/2 - size!.height/2
-            self.emptyTextString?.drawAtPoint(CGPointMake(x, top),
+            self.emptyTextString?.draw(at: CGPoint(x: x, y: top),
                 withAttributes: [NSFontAttributeName : font,  NSForegroundColorAttributeName: fieldColor])
             
         
         
-            CGContextRestoreGState( context)
+            context?.restoreGState()
             return
         }
         let context = UIGraphicsGetCurrentContext()
         
-        let fieldColor: UIColor = UIColor.whiteColor()
+        let fieldColor: UIColor = UIColor.white
        // let fontName = "System-Bold"
-        let font: UIFont = UIFont.boldSystemFontOfSize(12.0)
+        let font: UIFont = UIFont.boldSystemFont(ofSize: 12.0)
         
-        CGContextSaveGState( context)
+        context?.saveGState()
         var s: String = "1.0"
         
         var decimals = 0
@@ -291,24 +291,24 @@ class LineChartView: UIView {
             decimals = Int(ceil (-log10(axisInterval)))
         }
         
-        for (var i :Int32 = 0; i <= self.numYLabels; i++){
+        for i in 0...self.numYLabels {
             let y = self.minValue+self.axisInterval*Double(i)
             
             s = DataUtils.formatDouble ( y, numDecimals: decimals)!
             
             let labelTop = convertToPixel(y) - Double( font.lineHeight)
             
-            s.drawAtPoint(CGPointMake(CGFloat( self.barMarginLeft), CGFloat( labelTop)),
+            s.draw(at: CGPoint(x: CGFloat( self.barMarginLeft), y: CGFloat( labelTop)),
                 withAttributes: [NSFontAttributeName : font,  NSForegroundColorAttributeName: fieldColor])
             
         }
         
-        CGContextRestoreGState( context)
+        context?.restoreGState()
 
 
     }
     
-    func  convertToPixel( value :Double)->Double {
+    func  convertToPixel( _ value :Double)->Double {
     
         if value.isNaN{
             // Put invalid numbers outside the content area
@@ -366,11 +366,11 @@ class LineChartView: UIView {
         - parameter touches:
         - parameter event:
     */
-    override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) {
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         
        
         if let touch = touches.first {
-            let x = Double(touch.locationInView(self).x)
+            let x = Double(touch.location(in: self).x)
             if (x != markerX){
                 markerX = Double(x)
                 
@@ -382,10 +382,10 @@ class LineChartView: UIView {
             }
         }
         
-        super.touchesBegan(touches, withEvent:event)
+        super.touchesBegan(touches, with:event)
     }
     
-    func selectIndex ( index : Int64){
+    func selectIndex ( _ index : Int64){
         markerX = Double(index) * self.pointWidth + Double(barMarginLeft)
         self.setNeedsDisplay()
     }

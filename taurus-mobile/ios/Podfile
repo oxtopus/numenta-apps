@@ -1,16 +1,16 @@
 source 'https://github.com/CocoaPods/Specs.git'
 
-
-pod 'FMDB'
-pod 'Google/Analytics'
+target "Taurus" do
+  pod 'FMDB'
+  pod 'Google/Analytics'
 
 #pod 'MMDrawerController', '~> 0.5.7'
 
-pod'AWSCore', '2.3.0'
+  pod'AWSCore', '2.3.0'
 
 #pod 'AWSAutoScaling'
 #pod 'AWSCloudWatch'
-pod 'AWSDynamoDB',  :git => 'https://github.com/lscheinkman/aws-sdk-ios.git', :branch => 'gzip'
+  pod 'AWSDynamoDB',  :git => 'https://github.com/lscheinkman/aws-sdk-ios.git', :branch => 'gzip'
 #pod 'AWSEC2'
 #pod 'AWSElasticLoadBalancing'
 #pod 'AWSKinesis'
@@ -25,8 +25,8 @@ pod 'AWSDynamoDB',  :git => 'https://github.com/lscheinkman/aws-sdk-ios.git', :b
 
 #pod 'AWSSNS'
 #pod 'AWSSQS'
-pod 'AWSCognito', '2.3.0'
-
+  pod 'AWSCognito', '2.3.0'
+end
 
 
 

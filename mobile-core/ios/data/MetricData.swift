@@ -20,7 +20,7 @@
   *
   */
 
-public class MetricData {
+open class MetricData {
     //  /** Database Table name */
     static let TABLE_NAME: String! = "metric_data"
     var metricId: String!
@@ -30,11 +30,11 @@ public class MetricData {
     var rowid: Int64
 
     init(cursor: FMResultSet!) {
-        self.metricId = cursor.stringForColumn("metric_id")
-        self.metricValue = Float(cursor.doubleForColumn("metric_value"))
-        self.anomalyScore = Float(cursor.doubleForColumn("anomaly_score"))
-        self.timestamp = cursor.longLongIntForColumn("timestamp")
-        self.rowid = cursor.longLongIntForColumn("rowid")
+        self.metricId = cursor.string(forColumn: "metric_id")
+        self.metricValue = Float(cursor.double(forColumn: "metric_value"))
+        self.anomalyScore = Float(cursor.double(forColumn: "anomaly_score"))
+        self.timestamp = cursor.longLongInt(forColumn: "timestamp")
+        self.rowid = cursor.longLongInt(forColumn: "rowid")
     }
 
     init(metricId: String!, timestamp: Int64, metricValue: Float, anomalyScore: Float, rowid: Int64) {
@@ -55,11 +55,11 @@ public class MetricData {
 
     func getValues() -> Dictionary<String, AnyObject>! {
         var values = Dictionary<String, AnyObject>()
-        values["metric_id"] = self.metricId
-        values["metric_value"] = NSNumber(float:self.metricValue)
-        values["anomaly_score"] = NSNumber(float:self.anomalyScore)
-        values["timestamp"] = NSNumber(longLong:self.timestamp)
-        values["rowid"] = NSNumber(longLong:self.rowid)
+        values["metric_id"] = self.metricId as AnyObject
+        values["metric_value"] = NSNumber(value: self.metricValue as Float)
+        values["anomaly_score"] = NSNumber(value: self.anomalyScore as Float)
+        values["timestamp"] = NSNumber(value: self.timestamp as Int64)
+        values["rowid"] = NSNumber(value: self.rowid as Int64)
         return values
     }
 
@@ -83,11 +83,11 @@ public class MetricData {
         return self.rowid
     }
 
-    func setMetricId(_metricId: String!) {
+    func setMetricId(_ _metricId: String!) {
         self.metricId = _metricId
     }
 
-    func setTimestamp(_timestamp: Int64) {
+    func setTimestamp(_ _timestamp: Int64) {
         self.timestamp = _timestamp
     }
 }

@@ -23,10 +23,10 @@ import Foundation
 /**
  SQLiteHelper is a collection of routines to help with SQL operations. It uses a simililar api to the android SQL interface
   */
-public class SQLiteHelper {
+open class SQLiteHelper {
     
     var dbQueue : FMDatabaseQueue
-    var dateFormater: NSDateFormatter
+    var dateFormater: DateFormatter
     
     //Constant for conflict
     static let REPLACE = " REPLACE "
@@ -37,7 +37,7 @@ public class SQLiteHelper {
     - returns: number of rows that have been removed
     
     */
-    func delete (database: FMDatabase, table :String , whereClause: String?, whereArgs:[String]?)->Int32{
+    func delete (_ database: FMDatabase, table :String , whereClause: String?, whereArgs:[String]?)->Int32{
         
         
         var statement : String = "DELETE FROM " + table
@@ -45,7 +45,7 @@ public class SQLiteHelper {
         if (whereClause != nil ){
             statement += " where " + whereClause!;
         }
-        if (database.executeUpdate(statement, withArgumentsInArray: whereArgs)){
+        if (database.executeUpdate(statement, withArgumentsIn: whereArgs)){
             return database.changes()
         }
         return 0
@@ -56,29 +56,29 @@ public class SQLiteHelper {
         - parameter name : filename of the database. It will be created in the documents directory
    */
    public init(name: String){
-        let dirPaths = NSSearchPathForDirectoriesInDomains(.DocumentDirectory,.UserDomainMask, true)
+        let dirPaths = NSSearchPathForDirectoriesInDomains(.documentDirectory,.userDomainMask, true)
         let docsDir = dirPaths[0]
         let databasePath = docsDir + "/"+name
 
-        let checkValidation = NSFileManager.defaultManager()
-        let  exists = checkValidation.fileExistsAtPath(databasePath)
+        let checkValidation = FileManager.default
+        let  exists = checkValidation.fileExists(atPath: databasePath)
     
     
         dbQueue = FMDatabaseQueue(path: databasePath as String)
     
         if (!exists){
-            if let path = NSBundle.mainBundle().pathForResource("createdb", ofType:"sql") {
+            if let path = Bundle.main.path(forResource: "createdb", ofType:"sql") {
                 do{
-                    let data = try String(contentsOfFile:path, encoding: NSUTF8StringEncoding)
-                    let commandList = data.componentsSeparatedByCharactersInSet(NSCharacterSet (charactersInString: ";"))
+                    let data = try String(contentsOfFile:path, encoding: String.Encoding.utf8)
+                    let commandList = data.components(separatedBy: CharacterSet (charactersIn: ";"))
                     
                     dbQueue.inDatabase() {
                         database in
                         
                             for cmd in commandList {
-                              let success =  database.executeUpdate(cmd, withArgumentsInArray:nil)
-                              if !success{
-                                    print ("Error creating table: " + database.lastErrorMessage())
+                              let success =  database?.executeUpdate(cmd, withArgumentsIn:nil)
+                              if !success!{
+                                    print ("Error creating table: " + (database?.lastErrorMessage())!)
                                 }
                         }
                     }
@@ -91,9 +91,9 @@ public class SQLiteHelper {
         }
     
         // Initialize date formatter object
-        dateFormater = NSDateFormatter()
+        dateFormater = DateFormatter()
         dateFormater.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        dateFormater.timeZone = NSTimeZone(name:"UTC")
+        dateFormater.timeZone = TimeZone(identifier:"UTC")
     }
     
     /** Start a database transaction
@@ -108,7 +108,7 @@ public class SQLiteHelper {
     - parameter conflictAlgorithm : How to handle conflicts
     - returns: id of row add, -1 for failure
     */
-    func insertWithOnConflict(database: FMDatabase, table : String,  values :  Dictionary<String, AnyObject> ,  conflictAlgorithm : String) ->Int64{
+    func insertWithOnConflict(_ database: FMDatabase, table : String,  values :  Dictionary<String, AnyObject> ,  conflictAlgorithm : String) ->Int64{
         
         let statement =  prepareInsertStatement(table, columns: Array(values.keys), status : conflictAlgorithm)
         let rows =  database.executeUpdate(statement, withParameterDictionary: values )
@@ -122,7 +122,7 @@ public class SQLiteHelper {
     /** Update a row in a table
         needs to be implemented
     */
-    func update(database: FMDatabase, table : String, values :  Dictionary<String, Any>,  whereClause : String,  whereArgs: [String])->Int64{
+    func update(_ database: FMDatabase, table : String, values :  Dictionary<String, Any>,  whereClause : String,  whereArgs: [String])->Int64{
         return -1;
     }
     
@@ -139,16 +139,16 @@ public class SQLiteHelper {
      - parameter status : on conflict clause
      - returns: sql string
    */
-    func prepareInsertStatement(tableName: String , columns: [String], status: String)->String
+    func prepareInsertStatement(_ tableName: String , columns: [String], status: String)->String
     {
         var sqlStatement : String = "INSERT"
         if (!status.isEmpty ){
             sqlStatement += "  OR " + status
         }
         sqlStatement += " INTO " + tableName
-        let columnStr = "(" +  columns.joinWithSeparator(", ") + ")"
+        let columnStr = "(" +  columns.joined(separator: ", ") + ")"
         
-        let values = " VALUES (:" + columns.joinWithSeparator(", :") + ")"
+        let values = " VALUES (:" + columns.joined(separator: ", :") + ")"
         
         sqlStatement += columnStr + values
      //   sqlStatement+" ON CONFLICT " + status
@@ -157,14 +157,14 @@ public class SQLiteHelper {
     
     /**
     */
-    func buildInsertStatement (database: FMDatabase, tableName: String, data : Dictionary<String, Any>)->String{
+    func buildInsertStatement (_ database: FMDatabase, tableName: String, data : Dictionary<String, Any>)->String{
         return ""
     }
     
 
     /**
     */
-    func queryAll(database: FMDatabase, tableName:String)->FMResultSet!{
+    func queryAll(_ database: FMDatabase, tableName:String)->FMResultSet!{
      return nil
     }
     
@@ -176,13 +176,13 @@ public class SQLiteHelper {
         - parameter sortBy: order by clause. optional
         - return: result set
     */
-    func query(database: FMDatabase, tableName: String , columns: [String]?, whereClause: String?, whereArgs:[AnyObject]?, sortBy: String?)->FMResultSet!{
+    func query(_ database: FMDatabase, tableName: String , columns: [String]?, whereClause: String?, whereArgs:[AnyObject]?, sortBy: String?)->FMResultSet!{
         var query : String = "Select "
       
         if (columns==nil){
             query += "* "
         }else{
-            let colStr = columns?.joinWithSeparator(", ")
+            let colStr = columns?.joined(separator: ", ")
             query += colStr!
         }
         query += " FROM " + tableName
@@ -197,12 +197,12 @@ public class SQLiteHelper {
             query +=  " ORDER BY " + sortBy!
         }
         
-        return database.executeQuery (query, withArgumentsInArray: whereArgs)
+        return database.executeQuery (query, withArgumentsIn: whereArgs)
     }
     
      /** not currently needed
     */
-    func queryNumEntries(database: FMDatabase, tableName: String, whereClause: String!)->Int32{
+    func queryNumEntries(_ database: FMDatabase, tableName: String, whereClause: String!)->Int32{
         return 0;
     }
     
@@ -210,8 +210,8 @@ public class SQLiteHelper {
     parameter date : date to format
     returns: formatted string
     */
-    public func formatDate(date: NSDate)->String{
-        return dateFormater.stringFromDate(date)
+    open func formatDate(_ date: Date)->String{
+        return dateFormater.string(from: date)
     }
     
     
@@ -223,14 +223,14 @@ public class SQLiteHelper {
     - parameter limit: count as a string
     - return: result set
     */
-    func queryDistinct(database: FMDatabase, table: String , columns: [String]?, whereClause: String?,  limit: String? )->FMResultSet!{
+    func queryDistinct(_ database: FMDatabase, table: String , columns: [String]?, whereClause: String?,  limit: String? )->FMResultSet!{
         var query : String = "Select "
         query += "DISTINCT "
         
         if (columns==nil){
             query += "* "
         }else{
-            let colStr =  columns?.joinWithSeparator(", ")
+            let colStr =  columns?.joined(separator: ", ")
             query += colStr!
         }
         query += " FROM "
@@ -247,6 +247,6 @@ public class SQLiteHelper {
             query += " LIMIT " + limit!
         }
         
-        return database.executeQuery (query, withArgumentsInArray: nil)
+        return database.executeQuery (query, withArgumentsIn: nil)
     }
 }

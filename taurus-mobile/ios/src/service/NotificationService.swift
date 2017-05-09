@@ -28,14 +28,14 @@ class TaurusNotificationService{
     func syncNotifications(){
         
         // check if notifications are enabled let defaults = NSUserDefaults.standardUserDefaults()
-        let frequency : Int64 =  Int64 (NSUserDefaults.standardUserDefaults().integerForKey("maxNotificationsPerCompany")) * 1000
+        let frequency : Int64 =  Int64 (UserDefaults.standard.integer(forKey: "maxNotificationsPerCompany")) * 1000
         
-        let now = NSDate()
-        let lastRunTime =  NSUserDefaults.standardUserDefaults().objectForKey("LastNotification")
+        let now = Date()
+        let lastRunTime =  UserDefaults.standard.object(forKey: "LastNotification")
         let flooredDate = DataUtils.dateFromTimestamp(DataUtils.floorTo60Minutes( DataUtils.timestampFromDate(now)))
-         NSUserDefaults.standardUserDefaults().setObject(flooredDate, forKey: "LastNotification")
+         UserDefaults.standard.set(flooredDate, forKey: "LastNotification")
         
-        let lastTimestamp = lastRunTime == nil ? 0 : DataUtils.timestampFromDate(lastRunTime as! NSDate)
+        let lastTimestamp = lastRunTime == nil ? 0 : DataUtils.timestampFromDate(lastRunTime as! Date)
         let notifications = getNotifications(lastTimestamp, end: DataUtils.timestampFromDate(now), frequency: frequency)
     
         if ( notifications.count == 0){
@@ -54,11 +54,11 @@ class TaurusNotificationService{
         }
         
         let notification = UILocalNotification()
-        notification.fireDate = NSDate(timeIntervalSinceNow: 5)
+        notification.fireDate = Date(timeIntervalSinceNow: 5)
         notification.alertBody = alertBody
        // notification.alertAction = "be awesome!"
         notification.soundName = UILocalNotificationDefaultSoundName
-        UIApplication.sharedApplication().scheduleLocalNotification(notification)
+        UIApplication.shared.scheduleLocalNotification(notification)
         
         
 
@@ -66,7 +66,7 @@ class TaurusNotificationService{
     }
     
     
-    func getNotifications( start : Int64, end :Int64, frequency : Int64)->[TaurusNotification]{
+    func getNotifications( _ start : Int64, end :Int64, frequency : Int64)->[TaurusNotification]{
         let favorites = TaurusApplication.getFavoriteInstances()
         var results = [TaurusNotification]()
         var anomalies = [String: (Int64, AnomalyValue)]()
@@ -107,7 +107,7 @@ class TaurusNotificationService{
         return results
     }
     
-    func formatAnomalyTitle (instance: String, mask: MetricType, timestamp : Int64)->String{
+    func formatAnomalyTitle (_ instance: String, mask: MetricType, timestamp : Int64)->String{
         var anomalyTypes = ""
         if ( mask.contains(MetricType.StockPrice) || mask.contains(MetricType.StockVolume) ){
             
@@ -120,11 +120,11 @@ class TaurusNotificationService{
             if ( mask.contains(MetricType.TwitterVolume)){
                 anomalyTypes = "Twitter"
         }
-        let formatter = NSDateFormatter()
-        formatter.dateStyle = NSDateFormatterStyle.ShortStyle
-        formatter.timeStyle = .ShortStyle
+        let formatter = DateFormatter()
+        formatter.dateStyle = DateFormatter.Style.short
+        formatter.timeStyle = .short
         
-        let dateString = formatter.stringFromDate(DataUtils.dateFromTimestamp(timestamp))
+        let dateString = formatter.string(from: DataUtils.dateFromTimestamp(timestamp))
         
 
         let resultStr = instance + "(" + anomalyTypes + "):" + dateString

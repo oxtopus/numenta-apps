@@ -20,9 +20,9 @@
 */
 import Foundation
 
-public class Annotation {
+open class Annotation {
     
-    static public let TABLE_NAME = "annotation"
+    static open let TABLE_NAME = "annotation"
     var id: String!
     var timestamp: Int64
     var created: Int64
@@ -33,27 +33,27 @@ public class Annotation {
     var data: String!
     
     init(cursor: FMResultSet!) {
-        self.id = cursor.stringForColumn("annotation_id")
-        self.timestamp = cursor.longLongIntForColumn("timestamp")
-        self.created = cursor.longLongIntForColumn("created")
-        self.device = cursor.stringForColumn("device")
-        self.user = cursor.stringForColumn("user")
-        self.instanceId = cursor.stringForColumn("instance_id")
-        self.message = cursor.stringForColumn("message")
-        self.data = cursor.stringForColumn("data")
+        self.id = cursor.string(forColumn: "annotation_id")
+        self.timestamp = cursor.longLongInt(forColumn: "timestamp")
+        self.created = cursor.longLongInt(forColumn: "created")
+        self.device = cursor.string(forColumn: "device")
+        self.user = cursor.string(forColumn: "user")
+        self.instanceId = cursor.string(forColumn: "instance_id")
+        self.message = cursor.string(forColumn: "message")
+        self.data = cursor.string(forColumn: "data")
     }
     
     func getValues() -> Dictionary<String, AnyObject>! {
         var values = Dictionary<String, AnyObject>()
         
-        values["annotation_id"] = self.id
-        values["timestamp"] = NSNumber(longLong:self.timestamp)
-        values["created"] = NSNumber(longLong: self.created)
-        values["device"] = self.device
-        values["user"] = self.user
-        values["instance_id"] = self.instanceId
-        values["message"] = self.message
-        values["data"] = self.data
+        values["annotation_id"] = self.id as AnyObject
+        values["timestamp"] = NSNumber(value: self.timestamp as Int64)
+        values["created"] = NSNumber(value: self.created as Int64)
+        values["device"] = self.device as AnyObject
+        values["user"] = self.user as AnyObject
+        values["instance_id"] = self.instanceId as AnyObject
+        values["message"] = self.message as AnyObject
+        values["data"] = self.data as AnyObject
         return values
     }
     

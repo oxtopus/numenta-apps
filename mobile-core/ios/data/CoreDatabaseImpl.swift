@@ -80,10 +80,10 @@ class  CoreDatabaseImpl : CoreDatabase {
         sqlHelper.dbQueue.inTransaction() {
             db, rollback in
             
-            self.sqlHelper.delete(db, table: Annotation.TABLE_NAME, whereClause : nil, whereArgs : nil)
-            self.sqlHelper.delete(db, table: Notification.TABLE_NAME, whereClause : nil, whereArgs : nil)
-            self.sqlHelper.delete(db, table:  MetricData.TABLE_NAME, whereClause : nil, whereArgs : nil)
-            self.sqlHelper.delete(db, table:  Metric.TABLE_NAME, whereClause : nil, whereArgs : nil)
+            self.sqlHelper.delete(db!, table: Annotation.TABLE_NAME, whereClause : nil, whereArgs : nil)
+            self.sqlHelper.delete(db!, table: Notification.TABLE_NAME, whereClause : nil, whereArgs : nil)
+            self.sqlHelper.delete(db!, table:  MetricData.TABLE_NAME, whereClause : nil, whereArgs : nil)
+            self.sqlHelper.delete(db!, table:  Metric.TABLE_NAME, whereClause : nil, whereArgs : nil)
             self.invalidateMetricCache()
         }
     }
@@ -92,13 +92,13 @@ class  CoreDatabaseImpl : CoreDatabase {
         - parameter : metric metric to add
         - return: row id
     */
-    func addMetric(metric: Metric!) -> Int64{
+    func addMetric(_ metric: Metric!) -> Int64{
         var rowId : Int64 = -1
         
         sqlHelper.dbQueue.inTransaction() {
             db, rollback in
             
-            rowId = self.sqlHelper.insertWithOnConflict(db, table: Metric.TABLE_NAME, values: metric.getValues(), conflictAlgorithm : SQLiteHelper.REPLACE)
+            rowId = self.sqlHelper.insertWithOnConflict(db!, table: Metric.TABLE_NAME, values: metric.getValues(), conflictAlgorithm : SQLiteHelper.REPLACE)
             if (rowId != -1){
                 self.updateMetricCache(metric)
             }
@@ -119,7 +119,7 @@ class  CoreDatabaseImpl : CoreDatabase {
         - parameter : id of metric
         - returns: metric
     */
-    func getMetric(id: String!) -> Metric!{
+    func getMetric(_ id: String!) -> Metric!{
         return metricsCache[id]
     }
     
@@ -127,13 +127,13 @@ class  CoreDatabaseImpl : CoreDatabase {
         - parameter: metric to add
         - returns: true if successful
     */
-    func updateMetric(metric: Metric!) -> Bool{
+    func updateMetric(_ metric: Metric!) -> Bool{
   
         var rows : Int64 = 0
         sqlHelper.dbQueue.inTransaction() {
             db, rollback in
 
-            rows  = self.sqlHelper.update(db, table: Metric.TABLE_NAME, values: metric.getValues(), whereClause : "metric_id = ?", whereArgs : [metric.getId()])
+            rows  = self.sqlHelper.update(db!, table: Metric.TABLE_NAME, values: metric.getValues(), whereClause : "metric_id = ?", whereArgs : [metric.getId()])
             
             if (rows > 0){
                 self.updateMetricCache(metric)
@@ -146,12 +146,12 @@ class  CoreDatabaseImpl : CoreDatabase {
         - parameter id: id of metric
         - returns: number of rows delete
     */
-    func deleteMetric(id: String!) -> Int32{
+    func deleteMetric(_ id: String!) -> Int32{
         var rowsDeleted: Int32 = 0
         
         sqlHelper.dbQueue.inTransaction() {
             db, rollback in
-            rowsDeleted = self.sqlHelper.delete(db, table: Metric.TABLE_NAME , whereClause: "metric_id = ?", whereArgs:[id])
+            rowsDeleted = self.sqlHelper.delete(db!, table: Metric.TABLE_NAME , whereClause: "metric_id = ?", whereArgs:[id])
             if (rowsDeleted>0){
                 self.removeMetricFromCache(id)
             }
@@ -163,7 +163,7 @@ class  CoreDatabaseImpl : CoreDatabase {
      - parameter instanceId: id to find the metrics for
      - returns: array of metrics
     */
-    func getMetricsByInstanceId(instanceId: String!) -> [Metric]!{
+    func getMetricsByInstanceId(_ instanceId: String!) -> [Metric]!{
         var results = [Metric]()
         let values = metricsCache.values
         for metric in values {
@@ -178,13 +178,13 @@ class  CoreDatabaseImpl : CoreDatabase {
         - parameter batch : items to add
         - returns: true if successful
     */
-    func addMetricDataBatch(batch: [MetricData]!) -> Bool{
+    func addMetricDataBatch(_ batch: [MetricData]!) -> Bool{
         if (batch.isEmpty ){
             return false
         }
         
         let values = batch[0].getValues()
-        let columns = [String](values.keys)
+        let columns = [String](values!.keys)
         let updateStatement = ("UPDATE metric SET last_timestamp = ? "  + "WHERE metric_id = ? AND last_timestamp < ?")
         let insertStatement = sqlHelper.prepareInsertStatement(MetricData.TABLE_NAME, columns : columns, status: "IGNORE")
         
@@ -195,15 +195,15 @@ class  CoreDatabaseImpl : CoreDatabase {
             db, rollback in
             
             for metricData in batch {
-                if db.executeUpdate(insertStatement, withParameterDictionary: metricData.getValues()) {
-                    rowsInserted++
+                if (db?.executeUpdate(insertStatement, withParameterDictionary: metricData.getValues()))! {
+                    rowsInserted += 1
                     //sqlHelper.buildInsertStatement (MetricData.TABLE_NAME, data: metricData.getValues())
                     let metric = self.getMetric (metricData.getMetricId())
                     let timestamp = metricData.getTimestamp()
-                    if (timestamp > metric.getLastTimestamp()){
-                        if (db.executeUpdate(updateStatement, withArgumentsInArray: [String(timestamp), metric.getId(), String(timestamp)]) ){
-                            metric.setLastTimestamp( timestamp)
-                            self.updateMetricCache(metric)
+                    if (timestamp > (metric?.getLastTimestamp())!){
+                        if (db?.executeUpdate(updateStatement, withArgumentsIn: [String(timestamp), metric?.getId()!, String(timestamp)]) )!{
+                            metric?.setLastTimestamp( timestamp)
+                            self.updateMetricCache(metric!)
                         }
                     }
                 }
@@ -222,7 +222,7 @@ class  CoreDatabaseImpl : CoreDatabase {
         - parameter limit: number of items to return. 0 for all
         - returns: result set
     */
-    func getMetricData(metricId: String!, columns: [String]!, from: NSDate!, to: NSDate!, anomalyScore: Float, limit: Int32) -> FMResultSet!{
+    func getMetricData(_ metricId: String!, columns: [String]!, from: Date!, to: Date!, anomalyScore: Float, limit: Int32) -> FMResultSet!{
 
         var selection = String()
         //var selectionArgs = [String]()
@@ -264,7 +264,7 @@ class  CoreDatabaseImpl : CoreDatabase {
         sqlHelper.dbQueue.inDatabase() {
             db in
            
-            cursor  = self.sqlHelper.queryDistinct(db, table: MetricData.TABLE_NAME, columns: columns, whereClause: selection, limit: limitStr)
+            cursor  = self.sqlHelper.queryDistinct(db!, table: MetricData.TABLE_NAME, columns: columns, whereClause: selection, limit: limitStr)
         }
   
         return cursor!
@@ -274,13 +274,13 @@ class  CoreDatabaseImpl : CoreDatabase {
         - parameter batch: instance data to add
         - returns: true for success
     */
-    func addInstanceDataBatch(batch: [InstanceData]!) -> Bool{
+    func addInstanceDataBatch(_ batch: [InstanceData]!) -> Bool{
         if (batch == nil || batch.isEmpty) {
             return false;
         }
  
         let values = batch[0].getValues()
-        let columns = [String](values.keys)
+        let columns = [String](values!.keys)
         var rowsInserted = 0
         let insertStatement = sqlHelper.prepareInsertStatement(InstanceData.TABLE_NAME, columns : columns, status: "REPLACE")
 
@@ -288,8 +288,8 @@ class  CoreDatabaseImpl : CoreDatabase {
             db, rollback in
             
             for instanceData in batch {
-                if db.executeUpdate(insertStatement, withParameterDictionary: instanceData.getValues()) {
-                    rowsInserted++
+                if (db?.executeUpdate(insertStatement, withParameterDictionary: instanceData.getValues()))! {
+                    rowsInserted += 1
                 }
             }
         }
@@ -306,7 +306,7 @@ class  CoreDatabaseImpl : CoreDatabase {
         - parameter limit: items to fetch. 0 for all
         - returns: result set
     */
-    func getInstanceData( instanceId: String!, columns: [String]!, aggregation: AggregationType!, from: NSDate!, to: NSDate!, anomalyScore: Float, limit: Int32) -> FMResultSet!{
+    func getInstanceData( _ instanceId: String!, columns: [String]!, aggregation: AggregationType!, from: Date!, to: Date!, anomalyScore: Float, limit: Int32) -> FMResultSet!{
         var selection = String()
         var append = false
         if (from != nil) {
@@ -358,7 +358,7 @@ class  CoreDatabaseImpl : CoreDatabase {
         sqlHelper.dbQueue.inDatabase() {
             db in
             
-            cursor  = self.sqlHelper.queryDistinct(db, table: InstanceData.TABLE_NAME, columns: columns, whereClause: selection,  limit: limitStr)
+            cursor  = self.sqlHelper.queryDistinct(db!, table: InstanceData.TABLE_NAME, columns: columns, whereClause: selection,  limit: limitStr)
         }
         
         return cursor!
@@ -385,12 +385,12 @@ class  CoreDatabaseImpl : CoreDatabase {
         - parameter : instance to update
         - returns:  true for success
     */
-    func updateInstanceData(_instanceData: InstanceData!) -> Bool{
+    func updateInstanceData(_ _instanceData: InstanceData!) -> Bool{
        var success = false
         sqlHelper.dbQueue.inTransaction() {
             db, rollback in
             
-           let rows = self.sqlHelper.update(db, table: InstanceData.TABLE_NAME, values: _instanceData.getValues(), whereClause: "aggregation = ? AND instance_id = ? AND timestamp = ?",
+           let rows = self.sqlHelper.update(db!, table: InstanceData.TABLE_NAME, values: _instanceData.getValues(), whereClause: "aggregation = ? AND instance_id = ? AND timestamp = ?",
                 whereArgs: [String(_instanceData.getAggregation()), _instanceData.getInstanceId(), String(_instanceData.getTimestamp())])
             
             success = rows>0
@@ -402,16 +402,16 @@ class  CoreDatabaseImpl : CoreDatabase {
     /** Remove instance from DB
         - parameter instance : id of instance to remove
     */
-    func deleteInstance(instance: String!){
+    func deleteInstance(_ instance: String!){
         deleteInstanceData(instance)
-        instanceToName.removeValueForKey(instance)
+        instanceToName.removeValue(forKey: instance)
         // Remove annotations associated to this instance
         deleteAnnotationByInstanceId(instance)
         
         var metrics = getMetricsByInstanceId(instance)
         // Remove metrics associated to this instance
         metrics = getMetricsByInstanceId(instance);
-        for  metric in metrics {
+        for  metric in metrics! {
             deleteMetric(metric.getId())
         }
     }
@@ -419,12 +419,12 @@ class  CoreDatabaseImpl : CoreDatabase {
     /** remove data for instance id
         -parameter instanceId : id of instance to remove
     */
-    func deleteInstanceData(instanceId: String!){
+    func deleteInstanceData(_ instanceId: String!){
 
         sqlHelper.dbQueue.inTransaction() {
             db, rollback in
             
-            self.sqlHelper.delete( db, table: InstanceData.TABLE_NAME , whereClause: "instance_id = ?", whereArgs:[instanceId])
+            self.sqlHelper.delete( db!, table: InstanceData.TABLE_NAME , whereClause: "instance_id = ?", whereArgs:[instanceId])
         }
     }
     
@@ -432,7 +432,7 @@ class  CoreDatabaseImpl : CoreDatabase {
         - parameter instanceId:  id of instance
         - returns:   String: server name
     */
-    func getServerName(instanceId: String!) -> String!{
+    func getServerName(_ instanceId: String!) -> String!{
         if (instanceToName.isEmpty) {
             loadMetricCache()
         }
@@ -455,14 +455,14 @@ class  CoreDatabaseImpl : CoreDatabase {
         - parameter decription:
         - returns: id of added notification
     */
-    func addNotification(notificationId: String!, metricId: String!, timestamp: Int64, description: String!) -> Int64{
+    func addNotification(_ notificationId: String!, metricId: String!, timestamp: Int64, description: String!) -> Int64{
         var rowId :Int64 = -1
         let notification = Notification(notificationId: notificationId, metricId: metricId, timestamp: timestamp, read: false, description: description)
         
         sqlHelper.dbQueue.inTransaction() {
             db, rollback in
             
-            rowId = self.sqlHelper.insertWithOnConflict(db, table: Notification.TABLE_NAME, values: notification.getValues(), conflictAlgorithm : SQLiteHelper.REPLACE)
+            rowId = self.sqlHelper.insertWithOnConflict(db!, table: Notification.TABLE_NAME, values: notification.getValues(), conflictAlgorithm : SQLiteHelper.REPLACE)
         }
         return rowId
     }
@@ -475,13 +475,13 @@ class  CoreDatabaseImpl : CoreDatabase {
         sqlHelper.dbQueue.inDatabase() {
             db in
     
-            let cursor = self.sqlHelper.queryAll(db, tableName: Notification.TABLE_NAME)
+            let cursor = self.sqlHelper.queryAll(db!, tableName: Notification.TABLE_NAME)
         
-            while cursor.next() {
+            while (cursor?.next())! {
                 results.append(self.dataFactory.createNotification(cursor))
             }
         
-            cursor.close()
+            cursor?.close()
         }
         
         if results.isEmpty{
@@ -494,18 +494,18 @@ class  CoreDatabaseImpl : CoreDatabase {
         - parameter localId : id of notication
         - returns: notification. nil for no notification
     */
-    func getNotificationByLocalId(localId: Int32) -> Notification!{
+    func getNotificationByLocalId(_ localId: Int32) -> Notification!{
         var result: Notification! = nil;
         sqlHelper.dbQueue.inDatabase() {
             db in
 
-            let cursor = self.sqlHelper.query(db, tableName: Metric.TABLE_NAME , columns: nil, whereClause:"_id = ?", whereArgs:[String(localId)], sortBy: nil)
+            let cursor = self.sqlHelper.query(db!, tableName: Metric.TABLE_NAME , columns: nil, whereClause:"_id = ?", whereArgs:[String(localId) as AnyObject], sortBy: nil)
 
-            if (cursor.next()) {
+            if (cursor?.next())! {
                 result =  Notification(cursor: cursor)
             }
             
-            cursor.close()
+            cursor?.close()
         }
         return result
     }
@@ -517,7 +517,7 @@ class  CoreDatabaseImpl : CoreDatabase {
         var count : Int32 = 0
         sqlHelper.dbQueue.inDatabase() {
             db in
-            count = self.sqlHelper.queryNumEntries(db, tableName: Notification.TABLE_NAME, whereClause: "read = 0")
+            count = self.sqlHelper.queryNumEntries(db!, tableName: Notification.TABLE_NAME, whereClause: "read = 0")
         }
         return count
     }
@@ -531,7 +531,7 @@ class  CoreDatabaseImpl : CoreDatabase {
         sqlHelper.dbQueue.inDatabase() {
             db in
             
-            count = self.sqlHelper.queryNumEntries(db, tableName: Notification.TABLE_NAME, whereClause: nil)
+            count = self.sqlHelper.queryNumEntries(db!, tableName: Notification.TABLE_NAME, whereClause: nil)
         }
         
         return count
@@ -541,7 +541,7 @@ class  CoreDatabaseImpl : CoreDatabase {
         - parameter notificaiotnId : id of notification
         - results : true if marked read
     */
-    func markNotificationRead(notificationId: Int32) -> Bool{
+    func markNotificationRead(_ notificationId: Int32) -> Bool{
     
         var values = Dictionary<String, Any>()
         values["read"] = 1
@@ -550,7 +550,7 @@ class  CoreDatabaseImpl : CoreDatabase {
             
             db, rollback in
              let notificationIdStr = String (notificationId )
-             rows  = self.sqlHelper.update( db, table: Notification.TABLE_NAME, values: values, whereClause : "_id = ?", whereArgs : [notificationIdStr])
+             rows  = self.sqlHelper.update( db!, table: Notification.TABLE_NAME, values: values, whereClause : "_id = ?", whereArgs : [notificationIdStr])
             }
 
         return rows>0
@@ -561,13 +561,13 @@ class  CoreDatabaseImpl : CoreDatabase {
     - parameter localId : id of notification
     - results : rows deleted
     */
-    func deleteNotification(localId: Int32) -> Int32{
+    func deleteNotification(_ localId: Int32) -> Int32{
         var deleted : Int32 = 0
         sqlHelper.dbQueue.inTransaction() {
             
             db, rollback in
 
-            deleted = self.sqlHelper.delete(db, table: Notification.TABLE_NAME , whereClause: "_id = ?", whereArgs:[String(localId)])
+            deleted = self.sqlHelper.delete(db!, table: Notification.TABLE_NAME , whereClause: "_id = ?", whereArgs:[String(localId)])
         }
        
         return deleted;
@@ -581,7 +581,7 @@ class  CoreDatabaseImpl : CoreDatabase {
         var deleted: Int32 = 0
         sqlHelper.dbQueue.inTransaction() {
             db, rollback in
-             deleted = self.sqlHelper.delete( db, table: Notification.TABLE_NAME , whereClause: "1", whereArgs:nil)
+             deleted = self.sqlHelper.delete( db!, table: Notification.TABLE_NAME , whereClause: "1", whereArgs:nil)
         }
       
         return deleted;
@@ -592,7 +592,7 @@ class  CoreDatabaseImpl : CoreDatabase {
         - parameter annotation: annotation to add
         - returns: id of added annotation
     */
-    func addAnnotation(annotation: Annotation!) -> Int64{
+    func addAnnotation(_ annotation: Annotation!) -> Int64{
         if instanceToName[annotation.getId()]==nil{
             //"Failed to add annotation to database. Missing or unknown instance id"
             return -1;
@@ -602,7 +602,7 @@ class  CoreDatabaseImpl : CoreDatabase {
             
             db, rollback in
             
-            rowId = self.sqlHelper.insertWithOnConflict(db, table: Annotation.TABLE_NAME,  values: annotation.getValues(), conflictAlgorithm : SQLiteHelper.REPLACE)
+            rowId = self.sqlHelper.insertWithOnConflict(db!, table: Annotation.TABLE_NAME,  values: annotation.getValues(), conflictAlgorithm : SQLiteHelper.REPLACE)
         }
        
         return rowId
@@ -616,13 +616,13 @@ class  CoreDatabaseImpl : CoreDatabase {
         sqlHelper.dbQueue.inDatabase() {
             db in
 
-            let cursor = self.sqlHelper.queryAll(db, tableName: Annotation.TABLE_NAME)
+            let cursor = self.sqlHelper.queryAll(db!, tableName: Annotation.TABLE_NAME)
         
-            while cursor.next() {
+            while (cursor?.next())! {
                 results.append(self.dataFactory.createAnnotation(cursor))
             }
         
-            cursor.close()
+            cursor?.close()
         }
         
         if results.isEmpty{
@@ -635,17 +635,17 @@ class  CoreDatabaseImpl : CoreDatabase {
         - parameter id: id of annotation
         - returns: annotation
     */
-    func getAnnotation(id: String!) -> Annotation!{
+    func getAnnotation(_ id: String!) -> Annotation!{
         
         var result :Annotation! = nil
         sqlHelper.dbQueue.inDatabase() {
             db in
-            let cursor = self.sqlHelper.query( db, tableName: Annotation.TABLE_NAME , columns: nil, whereClause:"annotation_id = ?", whereArgs:[String(id)], sortBy: nil)
+            let cursor = self.sqlHelper.query( db!, tableName: Annotation.TABLE_NAME , columns: nil, whereClause:"annotation_id = ?", whereArgs:[String(describing:id) as AnyObject], sortBy: nil)
    
-            if (cursor.next()) {
+            if (cursor?.next())! {
              result =  Annotation(cursor: cursor)
             }
-            cursor.close()
+            cursor?.close()
         }
         
         return result
@@ -658,7 +658,7 @@ class  CoreDatabaseImpl : CoreDatabase {
         - parameter to: end date
         - returns: arrays of annotations
     */
-    func getAnnotations(server: String!, from: NSDate!, to: NSDate!) -> [Annotation]!{
+    func getAnnotations(_ server: String!, from: Date!, to: Date!) -> [Annotation]!{
         var selection = String()
         var selectionArgs = [String]()
         var append = false
@@ -689,12 +689,12 @@ class  CoreDatabaseImpl : CoreDatabase {
         
         sqlHelper.dbQueue.inDatabase() {
             db in
-            let cursor  = self.sqlHelper.query(db, tableName: Annotation.TABLE_NAME, columns: nil,  whereClause: selection, whereArgs: selectionArgs, sortBy: "timestamp ASC, created ASC")
+            let cursor  = self.sqlHelper.query(db!, tableName: Annotation.TABLE_NAME, columns: nil,  whereClause: selection, whereArgs: selectionArgs as [AnyObject], sortBy: "timestamp ASC, created ASC")
         
-            while (cursor.next()) {
+            while (cursor?.next())! {
                 results.append(self.dataFactory.createAnnotation(cursor))
             }
-            cursor.close()
+            cursor?.close()
         }
         return results;
     }
@@ -704,13 +704,13 @@ class  CoreDatabaseImpl : CoreDatabase {
     - parameter id: annotation Id
     - returns: rows deleted
     */
-    func deleteAnnotation(id: String!) -> Int32{
+    func deleteAnnotation(_ id: String!) -> Int32{
          var rowsDeleted: Int32 = 0
         
         sqlHelper.dbQueue.inTransaction() {
             db, rollback in
             
-            rowsDeleted = self.sqlHelper.delete( db, table: Annotation.TABLE_NAME , whereClause: "annotation_id = ?", whereArgs:[id])
+            rowsDeleted = self.sqlHelper.delete( db!, table: Annotation.TABLE_NAME , whereClause: "annotation_id = ?", whereArgs:[id])
         }
         return rowsDeleted
 
@@ -720,13 +720,13 @@ class  CoreDatabaseImpl : CoreDatabase {
         - parameter instanceId: instance Id
         - returns: rows deleted
     */
-    func deleteAnnotationByInstanceId(instanceId: String!) -> Int32{
+    func deleteAnnotationByInstanceId(_ instanceId: String!) -> Int32{
         var rowsDeleted: Int32 = 0
         
         sqlHelper.dbQueue.inTransaction() {
             db, rollback in
 
-            rowsDeleted = self.sqlHelper.delete(db, table: Annotation.TABLE_NAME , whereClause: "instance_id = ?", whereArgs:[instanceId])
+            rowsDeleted = self.sqlHelper.delete(db!, table: Annotation.TABLE_NAME , whereClause: "instance_id = ?", whereArgs:[instanceId])
         }
 
         return rowsDeleted
@@ -735,12 +735,12 @@ class  CoreDatabaseImpl : CoreDatabase {
 
     // Internal funcs
     
-    private var metricsCache = [String : Metric]()
-    private var instanceToName = [String : String]()
+    fileprivate var metricsCache = [String : Metric]()
+    fileprivate var instanceToName = [String : String]()
     
     /** removes all items from the cache
     */
-    private func invalidateMetricCache(){
+    fileprivate func invalidateMetricCache(){
         instanceToName.removeAll()
         metricsCache.removeAll()
     }
@@ -748,7 +748,7 @@ class  CoreDatabaseImpl : CoreDatabase {
     /** updates the cache for the metric
         - parameter metric: metric to add to cache
     */
-    private func updateMetricCache( metric : Metric ){
+    fileprivate func updateMetricCache( _ metric : Metric ){
         metricsCache[metric.getId()] = metric;
         instanceToName[metric.getInstanceId()] = metric.getServerName()
     }
@@ -757,9 +757,9 @@ class  CoreDatabaseImpl : CoreDatabase {
       - parameter id: id of metric to remove
       - returns: metric that was removed
     */
-    private func removeMetricFromCache (id: String)->Metric?{
-        if let metric =  metricsCache.removeValueForKey(id){
-            instanceToName.removeValueForKey( metric.getInstanceId())
+    fileprivate func removeMetricFromCache (_ id: String)->Metric?{
+        if let metric =  metricsCache.removeValue(forKey: id){
+            instanceToName.removeValue( forKey: metric.getInstanceId())
              deleteAnnotationByInstanceId(metric.getInstanceId())
             return metric
         }
@@ -770,23 +770,23 @@ class  CoreDatabaseImpl : CoreDatabase {
     
     /** load the metric cache
     */
-    private func loadMetricCache(){
+    fileprivate func loadMetricCache(){
         invalidateMetricCache()
         
        
         sqlHelper.dbQueue.inDatabase() {
             db in
             
-            let cursor = self.sqlHelper.queryDistinct(db, table:Metric.TABLE_NAME, columns: nil, whereClause: nil, limit: nil)
+            let cursor = self.sqlHelper.queryDistinct(db!, table:Metric.TABLE_NAME, columns: nil, whereClause: nil, limit: nil)
         
         
             if (cursor == nil){
                 return
             }
-            while cursor.next(){
+            while (cursor?.next())!{
                 let metric = self.dataFactory.createMetric(cursor)
-                self.instanceToName[metric.getInstanceId()] =  metric.getServerName()
-                self.metricsCache[metric.getId()] = metric
+                self.instanceToName[(metric?.getInstanceId())!] =  metric?.getServerName()
+                self.metricsCache[(metric?.getId())!] = metric
                 
             }
         }

@@ -17,10 +17,11 @@
 //
 // http://numenta.org/licenses/
 
+
 import Foundation
 
 class AppConfig{
     
     static let identityPoolId: String = "" // replace with pool ID
-    
+    static let currentStage: String = ".production"
 }

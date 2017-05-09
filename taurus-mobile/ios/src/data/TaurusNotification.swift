@@ -26,7 +26,7 @@ class TaurusNotification: Notification {
 
     init(_ instanceId: String!, timestamp: Int64, description: String!) {
         self.instanceId = instanceId
-        super.init(notificationId: NSUUID().UUIDString, metricId : nil, timestamp : timestamp, read : false, description: description)
+        super.init(notificationId: UUID().uuidString, metricId : nil, timestamp : timestamp, read : false, description: description)
        
     }
 

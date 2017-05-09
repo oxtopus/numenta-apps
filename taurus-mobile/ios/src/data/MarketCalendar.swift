@@ -20,7 +20,7 @@
 /**
 * Represent Stock market open hours and holidays
 */
-public class MarketCalendar {
+open class MarketCalendar {
 
     static let JANUARY = 1
     static let FEBRUARY = 2
@@ -44,22 +44,22 @@ public class MarketCalendar {
     }
     /** determine if the market is open
     */
-    public func isOpen (date : NSDate)->Bool {
-        let calendar = NSCalendar.currentCalendar()
-        calendar.timeZone = NSTimeZone(name: "US/Eastern")!
+    open func isOpen (_ date : Date)->Bool {
+        var calendar = Calendar.current
+        calendar.timeZone = TimeZone(identifier: "US/Eastern")!
 
         
         
         // check day of week
-        let dayOfWeek = calendar.components( (NSCalendarUnit.Weekday), fromDate: date)
+        let dayOfWeek = (calendar as NSCalendar).components( (NSCalendar.Unit.weekday), from: date)
         
-        if ( workweek[ dayOfWeek.weekday - 1 ]==false){
+        if ( workweek[ dayOfWeek.weekday! - 1 ]==false){
             return false
         }
         
-        let comp = calendar.components((NSCalendarUnit.Hour), fromDate: date)
+        let comp = (calendar as NSCalendar).components((NSCalendar.Unit.hour), from: date)
         let hour = comp.hour
-        if (hour>=9 && hour<16)
+        if (hour!>=9 && hour!<16)
         {
             let timestamp = DataUtils.timestampFromDate(date)
             let flooredTime = DataUtils.floorToDay(timestamp)
@@ -67,7 +67,7 @@ public class MarketCalendar {
             let holidayDatestamp = holidays[flooredTime]
             
             if ( holidayDatestamp != nil){
-                if ( timestamp > holidayDatestamp){
+                if ( timestamp > holidayDatestamp!){
                     return false
                 }
                 
@@ -79,7 +79,7 @@ public class MarketCalendar {
         return false
     }
     
-    public func isOpen (date : Int64)->Bool {
+    open func isOpen (_ date : Int64)->Bool {
         let time = DataUtils.dateFromTimestamp(date)
         return isOpen(time)
     }
@@ -87,7 +87,7 @@ public class MarketCalendar {
     /**
         Add in all the holidays
     */
-    public func createHolidays(){
+    open func createHolidays(){
         // New Years Day
         addHoliday(2015, month: MarketCalendar.JANUARY, day: 1, closingHour:0)
         addHoliday(2016, month: MarketCalendar.JANUARY, day: 1, closingHour:0)
@@ -142,17 +142,17 @@ public class MarketCalendar {
         - parameter day:
         - parameter closingHour:
     */
-    func addHoliday( year: Int, month: Int, day:Int, closingHour: Int){
-        let calendar =  NSCalendar.currentCalendar()
+    func addHoliday( _ year: Int, month: Int, day:Int, closingHour: Int){
+        let calendar =  Calendar.current
         
-        let comps = NSDateComponents()
+        var comps = DateComponents()
         comps.year = year
         comps.month = month
         comps.day = day
         comps.hour = closingHour
-        comps.timeZone = NSTimeZone(name: "US/Eastern")
+        (comps as NSDateComponents).timeZone = TimeZone(identifier: "US/Eastern")
         
-        let holidayDate = calendar.dateFromComponents(comps)
+        let holidayDate = calendar.date(from: comps)
         let holidayTimestamp = DataUtils.timestampFromDate(holidayDate!)
         holidays [ DataUtils.floorToDay(holidayTimestamp)] = holidayTimestamp
         

@@ -31,11 +31,11 @@ public protocol GrokClient {
     func getServerUrl() -> String!
     func getServerName() -> String!
     func getServerVersion() -> Int
-    func getMetrics() -> [Metric!]!
-    func getMetricData(modelId: String!, from: NSDate!, to: NSDate!, callback: (MetricData!)->Bool!)
-    func getNotifications() -> [Notification!]!
-    func acknowledgeNotifications(ids: [String!]!)
-    func getAnnotations(from: NSDate!, to: NSDate!) -> [Annotation!]!
-    func deleteAnnotation(annotation: Annotation!)
-    func addAnnotation(timestamp: NSDate!, server: String!, message: String!, user: String!) -> Annotation!
+    func getMetrics() -> [Metric?]!
+    func getMetricData(_ modelId: String!, from: Date!, to: Date!, callback: (MetricData!)->Bool!)
+    func getNotifications() -> [Notification?]!
+    func acknowledgeNotifications(_ ids: [String?]!)
+    func getAnnotations(_ from: Date!, to: Date!) -> [Annotation?]!
+    func deleteAnnotation(_ annotation: Annotation!)
+    func addAnnotation(_ timestamp: Date!, server: String!, message: String!, user: String!) -> Annotation!
 }

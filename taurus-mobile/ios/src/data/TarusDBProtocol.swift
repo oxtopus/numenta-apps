@@ -20,7 +20,7 @@
 import Foundation
 
 protocol TaurusDBProtocol: CoreDatabase {
-    func  getTickerSymbol(instanceId : String)->String?
-    func getInstanceData( instanceId : String,  from : Int64,  to : Int64) ->[Int64: AnomalyValue]?
+    func  getTickerSymbol(_ instanceId : String)->String?
+    func getInstanceData( _ instanceId : String,  from : Int64,  to : Int64) ->[Int64: AnomalyValue]?
     
 }

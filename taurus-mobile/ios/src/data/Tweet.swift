@@ -71,10 +71,10 @@ class Tweet  {
 
         
               //  // Clean up HTML encoded text
-       var cleanedText = text.stringByReplacingOccurrencesOfString("&amp;", withString: "&")
-        cleanedText = cleanedText.stringByReplacingOccurrencesOfString("&quot;", withString: "\"")
-        cleanedText = cleanedText.stringByReplacingOccurrencesOfString("&lt;", withString: "<")
-        cleanedText = cleanedText.stringByReplacingOccurrencesOfString("&gt;", withString: ">")
+       var cleanedText = text.replacingOccurrences(of: "&amp;", with: "&")
+        cleanedText = cleanedText.replacingOccurrences(of: "&quot;", with: "\"")
+        cleanedText = cleanedText.replacingOccurrences(of: "&lt;", with: "<")
+        cleanedText = cleanedText.replacingOccurrences(of: "&gt;", with: ">")
  
         self.text = cleanedText
         
@@ -143,69 +143,69 @@ class Tweet  {
     * </ol>
     * </p>
     */
-    func makeCannonicalText( rawTweet : String)->String{
+    func makeCannonicalText( _ rawTweet : String)->String{
          var rawText: String = rawTweet
         
         
         // Remove ...
         
         let dotdotdotRegEx = try! NSRegularExpression(pattern: DOT_DOT_DOT_REGEX,
-            options: [.CaseInsensitive])
-        rawText = dotdotdotRegEx.stringByReplacingMatchesInString(rawText, options:[],
+            options: [.caseInsensitive])
+        rawText = dotdotdotRegEx.stringByReplacingMatches(in: rawText, options:[],
             range: NSMakeRange(0, rawText.characters.count ), withTemplate: "")
         
         // Links
         let linkRegEx = try! NSRegularExpression(pattern: LINKS_REGEX,
-            options: [.CaseInsensitive])
+            options: [.caseInsensitive])
         
        
-        if ( linkRegEx.firstMatchInString(rawText, options:[],
+        if ( linkRegEx.firstMatch(in: rawText, options:[],
             range: NSMakeRange(0, rawText.characters.count ) ) != nil ){
                 
                 self.hasLinks = true
                 
-                rawText = linkRegEx.stringByReplacingMatchesInString(rawText, options:[],
+                rawText = linkRegEx.stringByReplacingMatches(in: rawText, options:[],
                     range: NSMakeRange(0, rawText.characters.count ), withTemplate: " ")
                 
         }
         
         
         let rtRegEx = try! NSRegularExpression(pattern: RT_REGEX,
-            options: [.CaseInsensitive])
-        rawText = rtRegEx.stringByReplacingMatchesInString(rawText, options:[],
+            options: [.caseInsensitive])
+        rawText = rtRegEx.stringByReplacingMatches(in: rawText, options:[],
             range: NSMakeRange(0, rawText.characters.count ), withTemplate: " ")
        
         let leftHashRegEx = try! NSRegularExpression(pattern: LEFT_HASHTAG_UP_TO_COLON_REGEX,
-            options: [.CaseInsensitive])
+            options: [.caseInsensitive])
        
 
         
-        if ( leftHashRegEx.firstMatchInString(rawText, options:[],
+        if ( leftHashRegEx.firstMatch(in: rawText, options:[],
             range: NSMakeRange(0, rawText.characters.count ) ) != nil ){
         
-                rawText = leftHashRegEx.stringByReplacingMatchesInString(rawText, options:[],
+                rawText = leftHashRegEx.stringByReplacingMatches(in: rawText, options:[],
                     range: NSMakeRange(0, rawText.characters.count ), withTemplate: " ")
                 
         }else{
-            rawText = leftHashRegEx.stringByReplacingMatchesInString(rawText, options:[],
+            rawText = leftHashRegEx.stringByReplacingMatches(in: rawText, options:[],
                 range: NSMakeRange(0, rawText.characters.count ), withTemplate: "$1")
 
         }
         
         // Remove hash tags from the right
         let rightHashRegEx = try! NSRegularExpression(pattern: RIGHT_HASHTAG_REGEX,
-            options: [.CaseInsensitive])
-        rawText = rightHashRegEx.stringByReplacingMatchesInString(rawText, options:[],
+            options: [.caseInsensitive])
+        rawText = rightHashRegEx.stringByReplacingMatches(in: rawText, options:[],
             range: NSMakeRange(0, rawText.characters.count ), withTemplate: " ")
         
         
         let twospaceRegEx = try! NSRegularExpression(pattern: TWO_OR_MORE_SPACES_REGEX,
-            options: [.CaseInsensitive])
-        rawText = twospaceRegEx.stringByReplacingMatchesInString(rawText, options:[],
+            options: [.caseInsensitive])
+        rawText = twospaceRegEx.stringByReplacingMatches(in: rawText, options:[],
             range: NSMakeRange(0, rawText.characters.count ), withTemplate: " ")
 
-        rawText =  rawText.stringByReplacingOccurrencesOfString("\\n", withString:"")
-        rawText = rawText.stringByReplacingOccurrencesOfString("\\r", withString:"")
+        rawText =  rawText.replacingOccurrences(of: "\\n", with:"")
+        rawText = rawText.replacingOccurrences(of: "\\r", with:"")
         
         
         

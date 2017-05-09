@@ -28,5 +28,5 @@
   * {@link GrokClient} used with a test version returning test data.
   */
 protocol GrokClientFactory {
-    func createClient(serverUrl: String!, pass: String!) -> GrokClient!
+    func createClient(_ serverUrl: String!, pass: String!) -> GrokClient!
 }

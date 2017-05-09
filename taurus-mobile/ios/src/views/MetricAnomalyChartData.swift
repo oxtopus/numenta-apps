@@ -19,6 +19,19 @@
 
 
   import Foundation
+// FIXME: comparison operators with optionals were removed from the Swift Standard Libary.
+// Consider refactoring the code to use the non-optional operators.
+fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
+  switch (lhs, rhs) {
+  case let (l?, r?):
+    return l < r
+  case (nil, _?):
+    return true
+  default:
+    return false
+  }
+}
+
   
   
   /** Holds the date for the chart
@@ -101,11 +114,11 @@
         
     }*/
     
-    func getEndDate()->NSDate?{
+    func getEndDate()->Date?{
         return DataUtils.dateFromTimestamp(endDate)
     }
     
-    func setEndDate(endDate: NSDate) {
+    func setEndDate(_ endDate: Date) {
         self.endDate = DataUtils.timestampFromDate (endDate)
     }
     
@@ -122,7 +135,7 @@
         }
         let numOfDays :Int64 =   TaurusApplication.getNumberOfDaysToSync()
         let size = numOfDays * DataUtils.MILLIS_PER_DAY / DataUtils.METRIC_DATA_INTERVAL
-        var newRawData = [Double](count: Int(size), repeatedValue: Double.NaN)
+        var newRawData = [Double](repeating: Double.nan, count: Int(size))
       //  var allAnomalies = [(Int64, Float)]()
         var aggregated  = [Int64 : Float]()
         
@@ -161,13 +174,13 @@
         var newAnomalies = [(Int64, Double)]()
         
         // Populate anomaly array for all scrollable period
-        for  var time = fromTime; time < lastTimestamp + DataUtils.MILLIS_PER_HOUR; time += DataUtils.MILLIS_PER_HOUR {
+        for time in stride(from: Int(fromTime), to: Int(lastTimestamp + DataUtils.MILLIS_PER_HOUR), by: Int(DataUtils.MILLIS_PER_HOUR)){
             var value  = 0.0
-            let  anomalyValue : Float? = aggregated[time]
+            let  anomalyValue : Float? = aggregated[Int64(time)]
             if (anomalyValue != nil){
                 value = Double (anomalyValue!)
             }
-            newAnomalies.append((time,value))
+            newAnomalies.append((Int64(time),value))
         }
         
         
@@ -184,7 +197,7 @@
     }
     
 
-    func getStartTimestamp()->NSDate{
+    func getStartTimestamp()->Date{
         let startStamp =  endDate - ( TaurusApplication.getNumberOfDaysToSync() * DataUtils.MILLIS_PER_DAY )
         return DataUtils.dateFromTimestamp(startStamp)
     }
@@ -209,7 +222,7 @@
         }
         var end = Int(start + size)
         
-        let slice = allRawData![Range<Int>(start: Int(start), end: end)]
+        let slice = allRawData![(Int(start) ..< end)]
         
         self.rawData = Array(slice)
         
@@ -218,7 +231,7 @@
         start = max(size - (lastTimestamp - endDate) / BAR_INTERVAL - bars, 0)
         end =  Int ( min ( start+bars+1, size))
 
-        let anomalySlice = self.allAnomalies[Range<Int>(start: Int(start), end: end)]
+        let anomalySlice = self.allAnomalies[(Int(start) ..< end)]
         self.anomalies = Array(anomalySlice)
     }
     
@@ -280,10 +293,10 @@
         let intervalsPerBar = size/bars
         //print (endDate)
         
-         var results = [Double](count: Int(size), repeatedValue: Double.NaN)
+         var results = [Double](repeating: Double.nan, count: Int(size))
         
-        let emptyValue = (Int64(0), Double.NaN)
-        var collapsedAnomalies : [(Int64, Double )] = [(Int64,Double)](count: Int(bars), repeatedValue: emptyValue )
+        let emptyValue = (Int64(0), Double.nan)
+        var collapsedAnomalies : [(Int64, Double )] = [(Int64,Double)](repeating: emptyValue, count: Int(bars) )
         
         let startTime = DataUtils.timestampFromDate( self.getStartTimestamp())
         
@@ -302,15 +315,16 @@
             
             if (open){
                 // Copy over values for time period
-                for (var i : Int64 = 0; i < intervalsPerBar; i++){
+                
+                for i in 0...intervalsPerBar {
                     let index = Int((bars-1) * intervalsPerBar + i  )
                     let srcIndex  = endIndex - (intervalsPerBar - i )
                     
                     
                     results[ index] = allRawData![ Int(srcIndex) ]
-
                     
                 }
+                
                 
                 // copy over anomalies
                 collapsedAnomalies[bars-1] = ( (bars-1) * intervalsPerBar , DataUtils.logScale( self.allAnomalies[barIndex].1 ))
@@ -331,12 +345,12 @@
                     }
                     
                     time -= interval
-                    barIndex--
+                    barIndex -= 1
                 }
             }
             time -= interval
-            bars--
-            barIndex--
+            bars -= 1
+            barIndex -= 1
             
         
             // stop if we get to the time before we have data

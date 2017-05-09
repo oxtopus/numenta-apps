@@ -62,13 +62,13 @@ class TwitterViewController: UIViewController, UITableViewDataSource, UITableVie
     /** handle the UISwitch for condensed tweets
      */
     @IBAction func toggleCondensed() {
-        self.showCondensed = (condensedToggle?.on)!
+        self.showCondensed = (condensedToggle?.isOn)!
         self.instanceTable.reloadData()
 
         if (self.showCondensed) {
-            self.instanceTable.separatorColor =  UIColor.blackColor()
+            self.instanceTable.separatorColor =  UIColor.black
         } else {
-            self.instanceTable.separatorColor = UIColor.lightGrayColor()
+            self.instanceTable.separatorColor = UIColor.lightGray
         }
     }
 
@@ -90,22 +90,22 @@ class TwitterViewController: UIViewController, UITableViewDataSource, UITableVie
             if metricChartData?.rawData == nil {
                 if metricChartDataLoading == false {
                     metricChartDataLoading = true
-                    let priority = QOS_CLASS_USER_INITIATED
+                    let priority = DispatchQoS.QoSClass.userInitiated
 
-                    dispatch_async(dispatch_get_global_queue(priority, 0)) {
+                    DispatchQueue.global(qos: priority).async {
 
                         self.metricChartData!.load()
                         self.metricChartData!.collapsed = false
                         self.metricChartData!.refreshData()
 
                         if self.metricChartData!.rawData != nil {
-                            dispatch_async(dispatch_get_main_queue()) {
+                            DispatchQueue.main.async {
 
                                 self.metricChartView?.data  = self.metricChartData!.rawData!
                                 self.metricChartView?.anomalies = self.metricChartData!.data!
                                 self.metricChartView?.updateData()
 
-                                dispatch_async(dispatch_get_global_queue(priority, 0)) {
+                                DispatchQueue.global(qos: priority).async {
                                     self.loadTwitterData()
                                 }
                             }
@@ -134,33 +134,33 @@ class TwitterViewController: UIViewController, UITableViewDataSource, UITableVie
         timeSlider?.transparentBackground = true
 
         // on iOS 8+ need to make sure table background is clear
-        instanceTable.backgroundColor = UIColor.clearColor()
+        instanceTable.backgroundColor = UIColor.clear
         self.instanceTable.estimatedRowHeight = 80.0
         self.instanceTable.rowHeight = UITableViewAutomaticDimension
         let menuIcon = UIImage(named: "menu")
-        let b2 = UIBarButtonItem(image: menuIcon, style: UIBarButtonItemStyle.Plain, target: self, action: "showMenu:")
+        let b2 = UIBarButtonItem(image: menuIcon, style: UIBarButtonItemStyle.plain, target: self, action: #selector(TwitterViewController.showMenu(_:)))
         self.menuButton = b2
         self.navigationItem.rightBarButtonItems = [menuButton!]
 
         metricChartView.selectionCallback = self.selection
-        condensedToggle?.on = self.showCondensed
-        self.instanceTable.separatorColor = UIColor.blackColor()
+        condensedToggle?.isOn = self.showCondensed
+        self.instanceTable.separatorColor = UIColor.black
         configureView()
 
-        let dayTimePeriodFormatter = NSDateFormatter()
+        let dayTimePeriodFormatter = DateFormatter()
         dayTimePeriodFormatter.dateFormat = "EEE M/d"
 
-        let dateString = dayTimePeriodFormatter.stringFromDate(self.timeSlider!.endDate)
+        let dateString = dayTimePeriodFormatter.string(from: self.timeSlider!.endDate as Date)
 
         self.date?.text = dateString
 
-        let priority = QOS_CLASS_USER_INITIATED
-        dispatch_async(dispatch_get_global_queue(priority, 0)) {
+        let priority = DispatchQoS.QoSClass.userInitiated
+        DispatchQueue.global(qos: priority).async {
             self.loadTwitterData()
         }
     }
 
-    func showMenu(sender: UIButton) {
+    func showMenu(_ sender: UIButton) {
         CustomMenuController.showMenu( self)
     }
 
@@ -172,20 +172,20 @@ class TwitterViewController: UIViewController, UITableViewDataSource, UITableVie
     /** Datasource delegate
      - returns : number of sections in table
      */
-    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
+    func numberOfSections(in tableView: UITableView) -> Int {
         return twitterIndex.count
     }
 
-    func tableView(tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        let  cell = tableView.dequeueReusableCellWithIdentifier("TwitterHeaderCell")
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        let  cell = tableView.dequeueReusableCell(withIdentifier: "TwitterHeaderCell")
         let headerCell = cell as! TwitterHeaderCell
         let ts = twitterIndex [section]
         let date = DataUtils.dateFromTimestamp(ts)
         let twitterEntry = twittermap[ts]
-        let formatter = NSDateFormatter()
+        let formatter = DateFormatter()
         formatter.dateFormat = "h:mma"
 
-        headerCell.date.text = formatter.stringFromDate(date)
+        headerCell.date.text = formatter.string(from: date)
         headerCell.tweetTotal.text = String(twitterEntry!.tweets)
         return headerCell
     }
@@ -193,7 +193,7 @@ class TwitterViewController: UIViewController, UITableViewDataSource, UITableVie
 
     /** Datasource delegate to return number of rows in a cell.
      */
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         let tsIndex = twitterIndex[section]
         let twitterEntry = twittermap[tsIndex]
         if twitterEntry == nil {
@@ -206,9 +206,9 @@ class TwitterViewController: UIViewController, UITableViewDataSource, UITableVie
 
     /** bind data to cell and return the cell
      */
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 
-        let cell: TwitterCell? = self.instanceTable.dequeueReusableCellWithIdentifier("TwitterCell") as! TwitterCell?
+        let cell: TwitterCell? = self.instanceTable.dequeueReusableCell(withIdentifier: "TwitterCell") as! TwitterCell?
 
         let section = indexPath.section
         let tsIndex = twitterIndex[section]
@@ -219,55 +219,55 @@ class TwitterViewController: UIViewController, UITableViewDataSource, UITableVie
         let tweet = items![ indexPath.item]
 
         cell?.timestamp = tsIndex
-        cell?.selectionStyle = .None
+        cell?.selectionStyle = .none
 
         if showCondensed {
-            let attrs = [NSFontAttributeName : UIFont.boldSystemFontOfSize(14.0)]
+            let attrs = [NSFontAttributeName : UIFont.boldSystemFont(ofSize: 14.0)]
             let attrStr = NSMutableAttributedString(string: tweet.cannonicalText, attributes:attrs)
             if tweet.hasLinks {
-                let bodyAttrs = [NSFontAttributeName : UIFont.systemFontOfSize(14.0)]
+                let bodyAttrs = [NSFontAttributeName : UIFont.systemFont(ofSize: 14.0)]
                 let tweetText = NSMutableAttributedString(string: " links", attributes:bodyAttrs)
-                attrStr.appendAttributedString(tweetText)
+                attrStr.append(tweetText)
 
             }
 
             cell?.label?.attributedText = attrStr
-            cell?.retweetCount.hidden = true
-            cell?.retweetImage.hidden = true
-            cell?.retweetTotal.hidden = true
+            cell?.retweetCount.isHidden = true
+            cell?.retweetImage.isHidden = true
+            cell?.retweetTotal.isHidden = true
 
             if tweet.retweetCount > 1 {
-                cell?.retweetCount.hidden = false
+                cell?.retweetCount.isHidden = false
                 cell?.retweetCount.text = String(tweet.retweetCount)
             } else {
-                cell?.retweetCount.hidden = true
+                cell?.retweetCount.isHidden = true
             }
         } else {
-            let attrs = [NSFontAttributeName: UIFont.boldSystemFontOfSize(14.0)]
+            let attrs = [NSFontAttributeName: UIFont.boldSystemFont(ofSize: 14.0)]
             let attrStr = NSMutableAttributedString(string:"@" + tweet.userName, attributes:attrs)
-            let bodyAttrs = [NSFontAttributeName: UIFont.systemFontOfSize(14.0)]
+            let bodyAttrs = [NSFontAttributeName: UIFont.systemFont(ofSize: 14.0)]
             let tweetText = NSMutableAttributedString(string: "\r\n" + tweet.text, attributes:bodyAttrs)
-            attrStr.appendAttributedString(tweetText)
+            attrStr.append(tweetText)
             cell?.label?.attributedText = attrStr
 
             if tweet.retweetCount > 1 {
-                cell?.retweetCount.hidden = false
+                cell?.retweetCount.isHidden = false
                 cell?.retweetCount.text = String(tweet.retweetCount)
             } else {
-                cell?.retweetCount.hidden = true
+                cell?.retweetCount.isHidden = true
             }
 
             if (tweet.retweetCount > 1 || tweet.retweetTotal > 1) {
-                cell?.retweetImage.hidden = false
+                cell?.retweetImage.isHidden = false
             } else {
-                cell?.retweetImage.hidden = true
+                cell?.retweetImage.isHidden = true
             }
 
             if tweet.retweetTotal > 1 {
-                cell?.retweetTotal.hidden = false
+                cell?.retweetTotal.isHidden = false
                 cell?.retweetTotal.text = String(tweet.retweetTotal)
             } else {
-                cell?.retweetTotal.hidden = true
+                cell?.retweetTotal.isHidden = true
             }
         }
         return cell!
@@ -275,12 +275,12 @@ class TwitterViewController: UIViewController, UITableViewDataSource, UITableVie
 
     /** prompt the user if they want to open the tweet when a row is selected
      */
-    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
 
         let alertView = UIAlertController(
             title: "Open Twitter",
             message: "Are you sure you want to open this message using twitter?",
-            preferredStyle: .Alert)
+            preferredStyle: .alert)
         let section = indexPath.section
         let tsIndex = self.twitterIndex[section]
         let twitterEntry = self.twittermap[tsIndex]
@@ -288,11 +288,11 @@ class TwitterViewController: UIViewController, UITableViewDataSource, UITableVie
         let tweet = items![ indexPath.item]
         let uri = "http://twitter.com/" + tweet.userName + "/status/" + tweet.id
 
-        alertView.addAction(UIAlertAction(title: "Open", style: .Default, handler: { (alertAction) -> Void in
-            UIApplication.sharedApplication().openURL(NSURL(string: uri)!)
+        alertView.addAction(UIAlertAction(title: "Open", style: .default, handler: { (alertAction) -> Void in
+            UIApplication.shared.openURL(URL(string: uri)!)
         }))
-        alertView.addAction(UIAlertAction(title: "Cancel", style: .Cancel, handler: nil))
-        presentViewController(alertView, animated: true, completion: nil)
+        alertView.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        present(alertView, animated: true, completion: nil)
     }
 
     /** load twitter data
@@ -300,7 +300,7 @@ class TwitterViewController: UIViewController, UITableViewDataSource, UITableVie
      */
     func loadTwitterData() {
 
-        UIApplication.sharedApplication().networkActivityIndicatorVisible = true
+        UIApplication.shared.isNetworkActivityIndicatorVisible = true
         let client = TaurusApplication.connectToTaurus()
         let metric = metricChartData?.metric
         let endTime = metricChartData!.getEndDate()// + DataUtils.MILLIS_PER_HOUR
@@ -337,7 +337,7 @@ class TwitterViewController: UIViewController, UITableViewDataSource, UITableVie
 
         for entry in loadIntervals {
             if self.cancelLoad {
-                UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+                UIApplication.shared.isNetworkActivityIndicatorVisible = false
                 return
             }
 
@@ -379,13 +379,13 @@ class TwitterViewController: UIViewController, UITableViewDataSource, UITableVie
             }
             updateList()
         }
-        UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+        UIApplication.shared.isNetworkActivityIndicatorVisible = false
     }
 
-    func sortTwitterEntry(twitterEntry: TwitterEntry) {
+    func sortTwitterEntry(_ twitterEntry: TwitterEntry) {
         // FIXME: 11-24-2015 Don't use sort in place since it causes crashes with large datasets.
         // XCode Bug has been reported to apple and looks like it is fixed in beta compilers
-        twitterEntry.data =  twitterEntry.data.sort {
+        twitterEntry.data =  twitterEntry.data.sorted {
             if $0.aggregated != $1.aggregated {
                 return $0.aggregated > $1.aggregated
             }
@@ -428,10 +428,10 @@ class TwitterViewController: UIViewController, UITableViewDataSource, UITableVie
 
 
         // Update the table to the new data
-        dispatch_async(dispatch_get_main_queue()) {
+        DispatchQueue.main.async {
 
             self.twitterIndex = Array(self.twittermap.keys)
-            self.twitterIndex.sortInPlace {
+            self.twitterIndex.sort {
                 return $0 >  $1
             }
 
@@ -441,19 +441,19 @@ class TwitterViewController: UIViewController, UITableViewDataSource, UITableVie
             // Update selection
             if self.timeToSelect > 0 {
                 let section  = self.getSectionByTimestamp(self.timeToSelect)
-                let index = NSIndexPath(forRow: 0, inSection: section)
-                self.instanceTable?.selectRowAtIndexPath(index, animated: false, scrollPosition: UITableViewScrollPosition.Top)
+                let index = IndexPath(row: 0, section: section)
+                self.instanceTable?.selectRow(at: index, animated: false, scrollPosition: UITableViewScrollPosition.top)
             }
         }
     }
 
-    func  getSectionByTimestamp(timestamp: Int64) -> Int {
+    func  getSectionByTimestamp(_ timestamp: Int64) -> Int {
         var section = 0
         for val in twitterIndex {
             if val < timestamp {
                 break
             }
-            section++
+            section += 1
         }
 
         if section >= twitterIndex.count {
@@ -464,7 +464,7 @@ class TwitterViewController: UIViewController, UITableViewDataSource, UITableVie
 
     /** Scroll table to match the selection
      - parameter index: */
-    func selection( index: Int)->Void {
+    func selection( _ index: Int)->Void {
 
         if (metricChartData == nil || metricChartData!.rawData == nil) {
             return
@@ -476,13 +476,13 @@ class TwitterViewController: UIViewController, UITableViewDataSource, UITableVie
         }
 
         let section = getSectionByTimestamp(timeStamp)
-        let index = NSIndexPath(forRow: 0, inSection: section)
-        self.instanceTable?.selectRowAtIndexPath(index, animated: false, scrollPosition: UITableViewScrollPosition.Top)
+        let index = IndexPath(row: 0, section: section)
+        self.instanceTable?.selectRow(at: index, animated: false, scrollPosition: UITableViewScrollPosition.top)
     }
 
     /** When the view is scrolled, update the metric chart selection
      */
-    func scrollViewDidScroll(scrollView: UIScrollView) {
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
         let visibleCells = self.instanceTable.visibleCells
 
         // If there are no visible cells don't do anything
@@ -505,17 +505,17 @@ class TwitterViewController: UIViewController, UITableViewDataSource, UITableVie
     /**
      tell any pending chart to stop loading if the view is going away
      */
-    override func viewWillDisappear(animated: Bool) {
+    override func viewWillDisappear(_ animated: Bool) {
         self.cancelLoad = true
         super.viewWillDisappear (animated)
         
     }
     
-    override func viewWillAppear(animated: Bool) {
+    override func viewWillAppear(_ animated: Bool) {
         // Google Analytics
         let tracker = GAI.sharedInstance().defaultTracker
-        tracker.set(kGAIScreenName, value: "com.numenta.taurus.twitter.TwitterDetailActivity")
+        tracker?.set(kGAIScreenName, value: "com.numenta.taurus.twitter.TwitterDetailActivity")
         let builder = GAIDictionaryBuilder.createScreenView()
-        tracker.send(builder.build() as [NSObject : AnyObject])
+        tracker?.send(builder?.build() as! [AnyHashable: Any])
     }
 }

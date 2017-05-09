@@ -61,14 +61,14 @@ protocol AnomalyChartData {
     *
     * @param endDate the endDate to set
     */
-    func setEndDate( endDate : NSDate)
+    func setEndDate( _ endDate : Date)
     
     /**
     * Load data up to this date, {@code null} for last known date
     *
     * @return the endDate
     */
-    func getEndDate()->NSDate?
+    func getEndDate()->Date?
     
     /**
     * Instance or Metric ID represented by this data

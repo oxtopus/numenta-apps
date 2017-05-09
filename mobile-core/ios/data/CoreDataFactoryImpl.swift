@@ -25,47 +25,47 @@
   */
 class CoreDataFactoryImpl: CoreDataFactory {
     
-    func createAnnotation(cursor: FMResultSet!) -> Annotation! {
+    func createAnnotation(_ cursor: FMResultSet!) -> Annotation! {
         return Annotation(cursor: cursor)
     }
 
-    func createAnnotation(annotationId: String!, timestamp: Int64, created: Int64, device: String!, user: String!, instanceId: String!, message: String!, data: String!) -> Annotation! {
+    func createAnnotation(_ annotationId: String!, timestamp: Int64, created: Int64, device: String!, user: String!, instanceId: String!, message: String!, data: String!) -> Annotation! {
           return Annotation(annotationId: annotationId, timestamp: timestamp, created: created, device: device, user: user, instanceId: instanceId, message: message, data: data)
     }
 
-    func createMetric(cursor: FMResultSet!) -> Metric! {
+    func createMetric(_ cursor: FMResultSet!) -> Metric! {
         return Metric(cursor)
     }
 
-    func createMetric(metricId: String!, name: String!, instanceId: String!, serverName: String!, lastRowId: Int32, parameters: JSON!) -> Metric! {
+    func createMetric(_ metricId: String!, name: String!, instanceId: String!, serverName: String!, lastRowId: Int32, parameters: JSON!) -> Metric! {
          return Metric(metricId: metricId, name: name, instanceId: instanceId!, serverName: serverName, lastRowId: lastRowId, parameters: parameters)
     }
 
-    func createMetricData(cursor: FMResultSet!) -> MetricData! {
+    func createMetricData(_ cursor: FMResultSet!) -> MetricData! {
         return MetricData(cursor: cursor)
     }
 
-    func createMetricData( metricId: String!, timestamp: Int64, metricValue: Float, anomalyScore: Float, rowid: Int64) -> MetricData! {
+    func createMetricData( _ metricId: String!, timestamp: Int64, metricValue: Float, anomalyScore: Float, rowid: Int64) -> MetricData! {
         return MetricData(metricId: metricId, timestamp: timestamp, metricValue: metricValue , anomalyScore: anomalyScore, rowid: rowid)
     }
 
-    func createInstance( id: String!, name: String!, namespace: String!, location: String!, message: String!, status: Int32) -> Instance! {
+    func createInstance( _ id: String!, name: String!, namespace: String!, location: String!, message: String!, status: Int32) -> Instance! {
       return Instance(id: id, name: name, namespace: namespace, location: location!, message: message, status: status)
     }
 
-    func createInstanceData(cursor: FMResultSet!) -> InstanceData! {
+    func createInstanceData(_ cursor: FMResultSet!) -> InstanceData! {
         return InstanceData(cursor: cursor)
     }
 
-    func createInstanceData(instanceId: String!,  aggregation: AggregationType!, timestamp: Int64, anomalyScore: Float) -> InstanceData! {
+    func createInstanceData(_ instanceId: String!,  aggregation: AggregationType!, timestamp: Int64, anomalyScore: Float) -> InstanceData! {
       return InstanceData(instanceId: instanceId , aggregation: aggregation.minutes(), timestamp: timestamp, anomalyScore: anomalyScore)
     }
 
-    func createNotification(cursor: FMResultSet!) -> Notification! {
+    func createNotification(_ cursor: FMResultSet!) -> Notification! {
         return Notification(cursor: cursor)
     }
 
-    func createNotification(notificationId: String!, metricId: String!, timestamp: Int64, read: Bool, description: String!) -> Notification! {
+    func createNotification(_ notificationId: String!, metricId: String!, timestamp: Int64, read: Bool, description: String!) -> Notification! {
            return Notification(notificationId: notificationId, metricId: metricId, timestamp: timestamp, read: read, description: description)
     }
 }

@@ -19,6 +19,30 @@
 
 
 import Foundation
+// FIXME: comparison operators with optionals were removed from the Swift Standard Libary.
+// Consider refactoring the code to use the non-optional operators.
+fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
+  switch (lhs, rhs) {
+  case let (l?, r?):
+    return l < r
+  case (nil, _?):
+    return true
+  default:
+    return false
+  }
+}
+
+// FIXME: comparison operators with optionals were removed from the Swift Standard Libary.
+// Consider refactoring the code to use the non-optional operators.
+fileprivate func > <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
+  switch (lhs, rhs) {
+  case let (l?, r?):
+    return l > r
+  default:
+    return rhs < lhs
+  }
+}
+
 
 
   /** Holds the date for the chart
@@ -111,7 +135,7 @@ class InstanceAnomalyChartData : AnomalyChartData {
         
         
         // FIXME check if it would be easier to keep list sorted
-        scores.sortInPlace {
+        scores.sort {
             return $0.0 < $1.0
         }
         
@@ -129,7 +153,7 @@ class InstanceAnomalyChartData : AnomalyChartData {
             // Get last "limit" bars
             let data :[Int64:AnomalyValue]? = db.getInstanceData(instanceId, from: lastDBTimestamp - Int64(limit) * aggregation.milliseconds(), to: lastDBTimestamp)
             // Sort and Truncate results
-            let sortedAnomalies = data?.sort {
+            let sortedAnomalies = data?.sorted {
                 $0.0 > $1.0
             }.prefix(limit)
 
@@ -169,7 +193,7 @@ class InstanceAnomalyChartData : AnomalyChartData {
     *
     * - parameter endDate: the endDate to set
     */
-    func setEndDate( endDate : NSDate){
+    func setEndDate( _ endDate : Date){
         
       //  print (endDate)
         let secsSince1970 : Double = endDate.timeIntervalSince1970
@@ -181,11 +205,11 @@ class InstanceAnomalyChartData : AnomalyChartData {
     *
     * -returns: the endDate
     */
-    func getEndDate()->NSDate?{
+    func getEndDate()->Date?{
         if (self.endDate==0){
             return nil
         }    
-        return NSDate(timeIntervalSince1970: Double(endDate)/1000.0)
+        return Date(timeIntervalSince1970: Double(endDate)/1000.0)
     }
     
     /**

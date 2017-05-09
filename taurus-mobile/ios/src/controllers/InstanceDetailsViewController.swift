@@ -32,7 +32,7 @@ class InstanceDetailsViewController: UIViewController, UITableViewDataSource, UI
     @IBOutlet weak var menuButton: UIBarButtonItem!
 
     // Serial queue for loading chart data
-    let loadQueue = dispatch_queue_create("com.numenta.InstanceDetailsController", nil)
+    let loadQueue = DispatchQueue(label: "com.numenta.InstanceDetailsController", qos: .userInitiated, target: .global())
     var  metricChartData  = [MetricAnomalyChartData]()
     var _aggregation: AggregationType = TaurusApplication.getAggregation()
     var marketHoursOnly = true
@@ -47,7 +47,7 @@ class InstanceDetailsViewController: UIViewController, UITableViewDataSource, UI
     /*
      tell any pending chart to stop loading if the view is going away
      */
-    override func viewWillDisappear(animated: Bool) {
+    override func viewWillDisappear(_ animated: Bool) {
         for chartData in metricChartData {
             chartData.stopLoading()
         }
@@ -62,7 +62,7 @@ class InstanceDetailsViewController: UIViewController, UITableViewDataSource, UI
         }
 
         if chartData?.getEndDate() != nil && timeSlider != nil {
-            updateTimeSlider ( (chartData?.getEndDate()!)!)
+            updateTimeSlider ( (chartData?.getEndDate()!)! as Date)
         }
 
         timeSlider?.disableTouches = false
@@ -77,7 +77,7 @@ class InstanceDetailsViewController: UIViewController, UITableViewDataSource, UI
             metricChartData.append( MetricAnomalyChartData (metric: metric, endDate :0))
         }
 
-        metricChartData.sortInPlace {
+        metricChartData.sort {
             let left = MetricType.enumForKey($0.metric.getUserInfo("metricType")).rawValue
             let right = MetricType.enumForKey($1.metric.getUserInfo("metricType")).rawValue
 
@@ -93,37 +93,36 @@ class InstanceDetailsViewController: UIViewController, UITableViewDataSource, UI
         // Hook up swipe gesture
 
         let panRec = UIPanGestureRecognizer()
-        panRec.addTarget(self, action: "draggedView:")
+        panRec.addTarget(self, action: #selector(InstanceDetailsViewController.draggedView(_:)))
         timeSlider?.addGestureRecognizer(panRec)
         timeSlider?.showBottom = false
         timeSlider?.transparentBackground = true
-        timeSlider?.openColor = UIColor.clearColor().CGColor
-        timeSlider?.closedColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 0.25).CGColor
+        timeSlider?.openColor = UIColor.clear.cgColor
+        timeSlider?.closedColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 0.25).cgColor
 
         // on iOS 8+ need to make sure table background is clear
-        instanceTable.backgroundColor = UIColor.clearColor()
+        instanceTable.backgroundColor = UIColor.clear
         instanceTable.rowHeight = 100
 
         let menuIcon = UIImage(named: "menu")
 
         let b2 = UIBarButtonItem (image: menuIcon,
-                                  style: UIBarButtonItemStyle.Plain,
+                                  style: UIBarButtonItemStyle.plain,
                                  target: self,
-                                 action: "showMenu:")
+                                 action: #selector(InstanceDetailsViewController.showMenu(_:)))
 
         self.menuButton = b2
 
-        b2.tintColor = UIColor.whiteColor()
+        b2.tintColor = UIColor.white
 
         self.navigationItem.rightBarButtonItems = [ menuButton!]
 
 
-        marketHoursSwitch?.on = self.marketHoursOnly
+        marketHoursSwitch?.isOn = self.marketHoursOnly
         self.timeSlider?.collapsed =  self.marketHoursOnly
 
         configureView()
-
-        dispatch_set_target_queue(loadQueue, dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0))
+        //loadQueue.async(execute: { self.loadQueue.setTarget(queue: DispatchQueue.global(qos: DispatchQoS.QoSClass.userInitiated))})
     }
 
     func updateAnomalyChartView() {
@@ -140,7 +139,7 @@ class InstanceDetailsViewController: UIViewController, UITableViewDataSource, UI
     }
 
     @IBAction func toggleMarketHours() {
-        self.marketHoursOnly = marketHoursSwitch!.on
+        self.marketHoursOnly = marketHoursSwitch!.isOn
         self.timeSlider?.collapsed =  self.marketHoursOnly
         self.timeSlider?.setNeedsDisplay()
 
@@ -166,17 +165,17 @@ class InstanceDetailsViewController: UIViewController, UITableViewDataSource, UI
      Handle the swipe gesture. Updates the time slider, anomalychart, and the metric table
      - parameter sender:
      */
-    func draggedView(sender: UIPanGestureRecognizer) {
+    func draggedView(_ sender: UIPanGestureRecognizer) {
         //  self.view.bringSubviewToFront(sender.view)
-        let translation = sender.translationInView(self.view)
+        let translation = sender.translation(in: self.view)
         //  print (translation)
         if abs(translation.y) > abs(translation.x) {
             return
         }
         let distance = getDistance( Double( translation.x) * -1.0 )
-        sender.setTranslation(CGPoint.zero, inView: self.view)
+        sender.setTranslation(CGPoint.zero, in: self.view)
 
-        var newTime: NSDate?
+        var newTime: Date?
 
         if self.marketHoursOnly {
             if self.chartData == nil {
@@ -212,7 +211,7 @@ class InstanceDetailsViewController: UIViewController, UITableViewDataSource, UI
             }
 
         } else {
-            newTime =  timeSlider?.endDate.dateByAddingTimeInterval(distance)
+            newTime =  timeSlider?.endDate.addingTimeInterval(distance) as! Date
         }
 
         //   print ((timeSlider?.endDate,newTime))
@@ -256,26 +255,26 @@ class InstanceDetailsViewController: UIViewController, UITableViewDataSource, UI
     /** Update timeslider view to match the passed in date
      - parameter date: end date to show
      */
-    func updateTimeSlider ( date: NSDate) {
+    func updateTimeSlider ( _ date: Date) {
         timeSlider?.endDate =  date
         timeSlider?.setNeedsDisplay()
 
-        let dayTimePeriodFormatter = NSDateFormatter()
+        let dayTimePeriodFormatter = DateFormatter()
         dayTimePeriodFormatter.dateFormat = "EEE M/d"
 
-        let dateString = dayTimePeriodFormatter.stringFromDate(date)
+        let dateString = dayTimePeriodFormatter.string(from: date)
 
         self.date?.text = dateString
     }
 
-    func showMenu( sender: UIButton) {
+    func showMenu( _ sender: UIButton) {
         CustomMenuController.showMenu( self)
     }
 
     /* get the amount of time to shift
      -parameter distance: length of swipe
      */
-    func getDistance(distance: Double) -> Double {
+    func getDistance(_ distance: Double) -> Double {
         let width =  self.view.frame.size.width
         let pixels = Double(Double(width) / (Double)(TaurusApplication.getTotalBarsOnChart()))
         let scrolledBars = Double(Int64 (distance / pixels))
@@ -288,28 +287,28 @@ class InstanceDetailsViewController: UIViewController, UITableViewDataSource, UI
     /* Datasource delegate
      - returns : number of sections in table
      */
-    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
+    func numberOfSections(in tableView: UITableView) -> Int {
         return 1
     }
 
     /* header title
      */
-    func tableView(tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         return nil
     }
 
     /* Datasource delegate to return number of rows in a cell.
      */
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return metricChartData.count
     }
 
     /* bind data to cell and return the cell
      */
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell = self.instanceTable.dequeueReusableCellWithIdentifier("metricCell")
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = self.instanceTable.dequeueReusableCell(withIdentifier: "metricCell")
 
-        cell?.selectionStyle = UITableViewCellSelectionStyle.None
+        cell?.selectionStyle = UITableViewCellSelectionStyle.none
         let metricCell =  cell    as! MetricCell?
 
         if metricCell == nil {
@@ -317,7 +316,7 @@ class InstanceDetailsViewController: UIViewController, UITableViewDataSource, UI
         }
 
         metricCell?.chart.emptyTextString = "Market Closed"
-        metricCell?.backgroundColor = UIColor.clearColor()
+        metricCell?.backgroundColor = UIColor.clear
         //    metricCell?.selectionStyle =   UITableViewCellSelectionStyle.Blue
         //    metricCell?.userInteractionEnabled = true
 
@@ -344,13 +343,13 @@ class InstanceDetailsViewController: UIViewController, UITableViewDataSource, UI
     /* Handle selection of row
 
      */
-    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
 
         let cellData =  metricChartData[ indexPath.item]
 
         if MetricType.enumForKey(cellData.metric.getUserInfo("metricType")) == MetricType.TwitterVolume {
 
-            performSegueWithIdentifier("twitterSegue", sender: nil)
+            performSegue(withIdentifier: "twitterSegue", sender: nil)
         }
     }
 
@@ -358,13 +357,13 @@ class InstanceDetailsViewController: UIViewController, UITableViewDataSource, UI
     - parameter cell: table cell to update
     - parameter data: Metric chart data to load
     */
-    func loadChartData(cell: MetricCell, data: MetricAnomalyChartData) {
+    func loadChartData(_ cell: MetricCell, data: MetricAnomalyChartData) {
 
-        dispatch_async(loadQueue) {
-            UIApplication.sharedApplication().networkActivityIndicatorVisible = true
+        loadQueue.async {
+            UIApplication.shared.isNetworkActivityIndicatorVisible = true
             data.load()
             if data.rawData != nil {
-                dispatch_async(dispatch_get_main_queue()) {
+                DispatchQueue.main.async {
 
                     data.setEndDate(  (self.timeSlider?.endDate)!)
                     data.collapsed = self.marketHoursOnly
@@ -374,7 +373,7 @@ class InstanceDetailsViewController: UIViewController, UITableViewDataSource, UI
                     cell.chart.updateData()
                     cell.data = data
 
-                    UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+                    UIApplication.shared.isNetworkActivityIndicatorVisible = false
                 }
             }
         }
@@ -382,15 +381,15 @@ class InstanceDetailsViewController: UIViewController, UITableViewDataSource, UI
 
     /* load twitter scene
      */
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "twitterSegue" {
             if let indexPath = self.instanceTable.indexPathForSelectedRow {
-                let controller = segue.destinationViewController as! TwitterViewController
+                let controller = segue.destination as! TwitterViewController
 
                 controller.metricChartData = self.metricChartData[indexPath.row].shallowCopy()
                 controller.chartData = self.chartData
 
-                let cell = self.instanceTable.cellForRowAtIndexPath(indexPath) as! MetricCell
+                let cell = self.instanceTable.cellForRow(at: indexPath) as! MetricCell
 
                 if cell.chart.selection != -1 {
 
@@ -408,11 +407,11 @@ class InstanceDetailsViewController: UIViewController, UITableViewDataSource, UI
                                 // Find end of collapsed period to be expanded
                                 while selectedBucket < data.count - 1 {
                                     if value.0 == 0 {
-                                        selectedBucket--
+                                        selectedBucket -= 1
                                         value = data[selectedBucket]
                                         break
                                     }
-                                    selectedBucket++
+                                    selectedBucket += 1
                                     value = data[selectedBucket]
                                 }
 
@@ -420,7 +419,7 @@ class InstanceDetailsViewController: UIViewController, UITableViewDataSource, UI
                                 if value.0 == 0 {
                                     if selectedBucket > 0 {
                                         // Get previous bar instead
-                                        selectedBucket--
+                                        selectedBucket -= 1
                                         value = data[selectedBucket]
                                     }
                                 }
@@ -440,11 +439,11 @@ class InstanceDetailsViewController: UIViewController, UITableViewDataSource, UI
         }
     }
 
-    override func viewWillAppear(animated: Bool) {
+    override func viewWillAppear(_ animated: Bool) {
         // Google Analytics
         let tracker = GAI.sharedInstance().defaultTracker
-        tracker.set(kGAIScreenName, value: "com.numenta.taurus.instance.InstanceDetailActivity")
+        tracker?.set(kGAIScreenName, value: "com.numenta.taurus.instance.InstanceDetailActivity")
         let builder = GAIDictionaryBuilder.createScreenView()
-        tracker.send(builder.build() as [NSObject : AnyObject])
+        tracker?.send(builder?.build() as! [AnyHashable: Any])
     }
 }

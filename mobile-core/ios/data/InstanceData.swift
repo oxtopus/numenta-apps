@@ -43,10 +43,10 @@ class InstanceData {
     }
 
     init(cursor: FMResultSet!) {
-        self.instanceId = cursor.stringForColumn("instance_id")
-        self.aggregation = cursor.intForColumn("aggregation")
-        self.timestamp = cursor.longLongIntForColumn("timestamp")
-        self.anomalyScore = Float(cursor.doubleForColumn("anomaly_score"))
+        self.instanceId = cursor.string(forColumn: "instance_id")
+        self.aggregation = cursor.int(forColumn: "aggregation")
+        self.timestamp = cursor.longLongInt(forColumn: "timestamp")
+        self.anomalyScore = Float(cursor.double(forColumn: "anomaly_score"))
     }
 
     init(instanceId: String!, aggregation: Int32, timestamp: Int64, anomalyScore: Float) {
@@ -58,10 +58,10 @@ class InstanceData {
 
     func getValues() -> Dictionary<String, AnyObject>! {
         var values = Dictionary<String, AnyObject>()
-        values["instance_id"] = self.instanceId
-        values["aggregation"] = NSNumber(int:self.aggregation)
-        values["timestamp"] = NSNumber(longLong:self.timestamp)
-        values["anomaly_score"] = NSNumber(float:self.anomalyScore)
+        values["instance_id"] = self.instanceId as AnyObject
+        values["aggregation"] = NSNumber(value: self.aggregation as Int32)
+        values["timestamp"] = NSNumber(value: self.timestamp as Int64)
+        values["anomaly_score"] = NSNumber(value: self.anomalyScore as Float)
         return values
     }
 
@@ -69,7 +69,7 @@ class InstanceData {
         return self.instanceId
     }
 
-    func setInstanceId(instanceId: String!) {
+    func setInstanceId(_ instanceId: String!) {
         self.instanceId = instanceId
     }
 
@@ -77,7 +77,7 @@ class InstanceData {
         return self.aggregation
     }
 
-    func setAggregation(aggregation: Int32) {
+    func setAggregation(_ aggregation: Int32) {
         self.aggregation = aggregation
     }
 
@@ -85,7 +85,7 @@ class InstanceData {
         return self.timestamp
     }
 
-    func setTimestamp( timestamp: Int64) {
+    func setTimestamp( _ timestamp: Int64) {
         self.timestamp = timestamp
     }
 
@@ -93,7 +93,7 @@ class InstanceData {
         return self.anomalyScore
     }
 
-    func setAnomalyScore( anomalyScore: Float) {
+    func setAnomalyScore( _ anomalyScore: Float) {
         self.anomalyScore = anomalyScore
     }
   }

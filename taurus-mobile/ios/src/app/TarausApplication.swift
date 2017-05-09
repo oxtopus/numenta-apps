@@ -62,9 +62,9 @@ class TaurusApplication : GrokApplication{
     * -parameter instance: The instance ID to check
     * - returns: if it is a favorite,
     */
-    static func isInstanceFavorite(instance:String)->Bool {
+    static func isInstanceFavorite(_ instance:String)->Bool {
     
-        let favorites = NSUserDefaults.standardUserDefaults().objectForKey("favorites")
+        let favorites = UserDefaults.standard.object(forKey: "favorites")
         if (favorites == nil ){
             return false
         }
@@ -76,7 +76,7 @@ class TaurusApplication : GrokApplication{
     * Return a collection with all instances marked as favorite by the user
     */
     static func getFavoriteInstances()->[String] {
-        let favorites = NSUserDefaults.standardUserDefaults().objectForKey("favorites")
+        let favorites = UserDefaults.standard.object(forKey: "favorites")
         if (favorites == nil ){
             return []
         }
@@ -90,15 +90,15 @@ class TaurusApplication : GrokApplication{
     *
     * @- parameter instance: The instance ID to add
     */
-    static func addInstanceToFavorites(instance: String) {
-        var favorites = NSUserDefaults.standardUserDefaults().objectForKey("favorites")
+    static func addInstanceToFavorites(_ instance: String) {
+        var favorites = UserDefaults.standard.object(forKey: "favorites")
         
         if (favorites == nil){
             favorites = [String : NSNumber]()
         }
         var dict : [String: NSNumber] = favorites! as! [String : NSNumber]
         dict[instance] = 0
-        NSUserDefaults.standardUserDefaults().setObject(dict, forKey: "favorites")
+        UserDefaults.standard.set(dict, forKey: "favorites")
         
      }
     
@@ -107,17 +107,17 @@ class TaurusApplication : GrokApplication{
     *     x
     * @- parameter instance: The instance ID to add
     */
-    static func removeInstanceToFavorites(instance: String) {
-        let favorites = NSUserDefaults.standardUserDefaults().objectForKey("favorites")
+    static func removeInstanceToFavorites(_ instance: String) {
+        let favorites = UserDefaults.standard.object(forKey: "favorites")
         var dict : [String:NSNumber] = favorites! as! [String : NSNumber]
-        dict.removeValueForKey(instance)
-        NSUserDefaults.standardUserDefaults().setObject(dict, forKey: "favorites")
+        dict.removeValue(forKey: instance)
+        UserDefaults.standard.set(dict, forKey: "favorites")
         
     }
     
-    static func getLastNotificationTime(instance : String)->Int64{
+    static func getLastNotificationTime(_ instance : String)->Int64{
         
-        let favorites = NSUserDefaults.standardUserDefaults().objectForKey("favorites")
+        let favorites = UserDefaults.standard.object(forKey: "favorites")
         if (favorites == nil ){
             return 0
         }
@@ -126,20 +126,20 @@ class TaurusApplication : GrokApplication{
         let data = dict[instance]
         
         if (data != nil){
-            return data!.longLongValue
+            return data!.int64Value
         }
         return 0
     }
     
-    static func setLastNotificationTime(instance : String, time: Int64){
-        var favorites = NSUserDefaults.standardUserDefaults().objectForKey("favorites")
+    static func setLastNotificationTime(_ instance : String, time: Int64){
+        var favorites = UserDefaults.standard.object(forKey: "favorites")
         if (favorites == nil ){
             favorites = [String : NSNumber]()
         }
         var dict : [String:NSNumber] = favorites! as! [String : NSNumber]
         
-        dict[instance] = NSNumber(longLong: time)
-        NSUserDefaults.standardUserDefaults().setObject(dict, forKey: "favorites")
+        dict[instance] = NSNumber(value: time as Int64)
+        UserDefaults.standard.set(dict, forKey: "favorites")
 
     }
     
